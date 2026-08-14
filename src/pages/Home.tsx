@@ -57,8 +57,10 @@ export default function Home() {
   const recent = expenses?.slice(0, 5) ?? []
 
   return (
-    <div className="flex flex-col">
-      <section className="flex flex-col gap-3 px-4 pb-5 pt-6" style={{ minHeight: '25dvh' }}>
+    <div className="flex flex-col lg:flex-row lg:items-start lg:gap-6 lg:px-4 lg:pt-6">
+      <section
+        className="flex flex-col gap-3 px-4 pb-5 pt-6 min-h-[25dvh] lg:min-h-[320px] lg:flex-1 lg:px-0 lg:pb-0 lg:pt-0"
+      >
         <div>
           <p className="text-sm text-slate-500 dark:text-slate-400">This week</p>
           <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">{currency.format(weekTotal)}</h1>
@@ -78,10 +80,10 @@ export default function Home() {
                 key={iso}
                 onClick={() => setSelectedDay((prev) => (prev === iso ? null : iso))}
                 aria-label={`${longLabel(iso)}: ${currency.format(value)}`}
-                className="flex h-24 flex-1 flex-col items-center justify-end gap-1.5"
+                className="flex h-24 flex-1 flex-col items-center justify-end gap-1.5 lg:h-40"
               >
                 <div
-                  className={`w-full max-w-[24px] rounded-t bg-accent transition-all duration-200 ${
+                  className={`w-full max-w-[24px] rounded-t bg-accent transition-all duration-200 lg:max-w-[32px] ${
                     isSelected
                       ? 'ring-2 ring-accent ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900'
                       : ''
@@ -101,7 +103,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-2 px-4 pb-6">
+      <section className="flex flex-col gap-2 px-4 pb-6 lg:w-96 lg:shrink-0 lg:px-0 lg:pb-0">
         <button
           onClick={() => setRecentOpen((open) => !open)}
           aria-expanded={recentOpen}
@@ -129,7 +131,7 @@ export default function Home() {
               <Link
                 key={e.id}
                 to={`/expense/${e.id}`}
-                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700"
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-md"
               >
                 <div className="min-w-0">
                   <p className="truncate font-medium text-slate-900 dark:text-slate-100">{e.merchant}</p>

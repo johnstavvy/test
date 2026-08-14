@@ -60,15 +60,15 @@ export default function Summary() {
     .map((m) => ({ label: monthLabel(m.month), total: m.total }))
 
   return (
-    <div className="flex flex-col gap-8 px-4 py-6">
-      <section>
+    <div className="flex flex-col gap-8 px-4 py-6 lg:flex-row lg:gap-6">
+      <section className="lg:flex-1">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           By Category
         </h2>
         <BarList rows={byCategory} />
       </section>
 
-      <section>
+      <section className="lg:flex-1">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           By Month
         </h2>

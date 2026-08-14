@@ -42,7 +42,7 @@ export default function ExpenseDetail() {
   }
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-6">
+    <div className="flex flex-col gap-4 px-4 py-6 lg:mx-auto lg:max-w-xl">
       <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Edit expense</h1>
 
       {expense.imageDataUrl && (

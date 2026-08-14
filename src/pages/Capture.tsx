@@ -175,7 +175,7 @@ export default function Capture() {
 
   if (stage === 'idle') {
     return (
-      <div className="flex flex-col items-center justify-center gap-6 px-6 py-16 text-center">
+      <div className="flex flex-col items-center justify-center gap-6 px-6 py-16 text-center lg:mx-auto lg:max-w-xl">
         <div className="flex h-24 w-24 items-center justify-center rounded-full bg-accent/10 text-4xl dark:bg-accent/15">
           🧾
         </div>
@@ -286,7 +286,7 @@ export default function Capture() {
   }
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-6">
+    <div className="flex flex-col gap-4 px-4 py-6 lg:mx-auto lg:max-w-xl">
       <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
         {imageDataUrl ? 'Review expense' : 'New expense'}
       </h1>

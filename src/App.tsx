@@ -14,60 +14,87 @@ const NAV_ITEMS = [
   { to: '/settings', label: 'Settings', icon: '⚙️', end: false },
 ]
 
+function BottomBarItem({ item }: { item: (typeof NAV_ITEMS)[number] }) {
+  return (
+    <NavLink
+      to={item.to}
+      end={item.end}
+      className={({ isActive }) =>
+        `flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
+          isActive ? 'text-accent' : 'text-slate-400 dark:text-slate-500'
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <span className={`text-xl transition-transform duration-200 ${isActive ? 'scale-110' : 'scale-100'}`}>
+            {item.icon}
+          </span>
+          {item.label}
+        </>
+      )}
+    </NavLink>
+  )
+}
+
+function SidebarItem({ item }: { item: (typeof NAV_ITEMS)[number] }) {
+  return (
+    <NavLink
+      to={item.to}
+      end={item.end}
+      className={({ isActive }) =>
+        `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors lg:hover:bg-slate-100 dark:lg:hover:bg-slate-800 ${
+          isActive ? 'bg-accent/10 text-accent dark:bg-accent/15' : 'text-slate-500 dark:text-slate-400'
+        }`
+      }
+    >
+      <span className="text-lg">{item.icon}</span>
+      {item.label}
+    </NavLink>
+  )
+}
+
 export default function App() {
   const location = useLocation()
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-50 dark:bg-slate-900">
-      <header
-        className="sticky top-0 z-20 flex items-center justify-center border-b border-slate-200/80 bg-white/80 py-3 backdrop-blur-lg dark:border-slate-800 dark:bg-slate-900/80"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.5rem)' }}
-      >
-        <span className="font-semibold text-slate-900 dark:text-slate-100">Expense Scanner</span>
-      </header>
+    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-50 dark:bg-slate-900 lg:mx-0 lg:max-w-none lg:flex-row">
+      <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:shrink-0 lg:flex-col lg:gap-1 lg:border-r lg:border-slate-200/80 lg:bg-white/80 lg:p-4 lg:backdrop-blur-lg dark:lg:border-slate-800 dark:lg:bg-slate-900/80">
+        <span className="px-3 pb-4 pt-1 font-semibold text-slate-900 dark:text-slate-100">Expense Scanner</span>
+        {NAV_ITEMS.map((item) => (
+          <SidebarItem key={item.to} item={item} />
+        ))}
+      </aside>
 
-      <main className="flex-1 pb-24">
-        <div key={location.pathname} className="page-transition">
-          <Routes location={location}>
-            <Route path="/" element={<Home />} />
-            <Route path="/expenses" element={<Expenses />} />
-            <Route path="/capture" element={<Capture />} />
-            <Route path="/summary" element={<Summary />} />
-            <Route path="/expense/:id" element={<ExpenseDetail />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
-        </div>
-      </main>
+      <div className="flex min-h-screen flex-1 flex-col lg:min-h-0">
+        <header
+          className="sticky top-0 z-20 flex items-center justify-center border-b border-slate-200/80 bg-white/80 py-3 backdrop-blur-lg dark:border-slate-800 dark:bg-slate-900/80 lg:hidden"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.5rem)' }}
+        >
+          <span className="font-semibold text-slate-900 dark:text-slate-100">Expense Scanner</span>
+        </header>
 
-      <nav
-        className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t border-slate-200/80 bg-white/85 backdrop-blur-lg dark:border-slate-800 dark:bg-slate-900/85"
-      >
-        <div className="flex justify-around" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
-                  isActive ? 'text-accent' : 'text-slate-400 dark:text-slate-500'
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <span
-                    className={`text-xl transition-transform duration-200 ${isActive ? 'scale-110' : 'scale-100'}`}
-                  >
-                    {item.icon}
-                  </span>
-                  {item.label}
-                </>
-              )}
-            </NavLink>
-          ))}
-        </div>
-      </nav>
+        <main className="flex-1 pb-24 lg:mx-auto lg:w-full lg:max-w-5xl lg:pb-10">
+          <div key={location.pathname} className="page-transition">
+            <Routes location={location}>
+              <Route path="/" element={<Home />} />
+              <Route path="/expenses" element={<Expenses />} />
+              <Route path="/capture" element={<Capture />} />
+              <Route path="/summary" element={<Summary />} />
+              <Route path="/expense/:id" element={<ExpenseDetail />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </div>
+        </main>
+
+        <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t border-slate-200/80 bg-white/85 backdrop-blur-lg dark:border-slate-800 dark:bg-slate-900/85 lg:hidden">
+          <div className="flex justify-around" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+            {NAV_ITEMS.map((item) => (
+              <BottomBarItem key={item.to} item={item} />
+            ))}
+          </div>
+        </nav>
+      </div>
     </div>
   )
 }
