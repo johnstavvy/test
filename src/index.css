@@ -3,10 +3,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --accent: #007aff;
+  --accent: #026e5c;
 }
 .dark {
-  --accent: #0a84ff;
+  --accent: #33ccb3;
 }
 
 @theme {
