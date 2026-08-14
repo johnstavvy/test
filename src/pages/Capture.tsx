@@ -176,7 +176,7 @@ export default function Capture() {
   if (stage === 'idle') {
     return (
       <div className="flex flex-col items-center justify-center gap-6 px-6 py-16 text-center">
-        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-100 text-4xl dark:bg-emerald-900/40">
+        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-accent/10 text-4xl dark:bg-accent/15">
           🧾
         </div>
         <div>
@@ -186,18 +186,18 @@ export default function Capture() {
           </p>
         </div>
         {error && (
-          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+          <p className="rounded-2xl bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
             {error}
           </p>
         )}
         <div className="flex w-full max-w-xs flex-col gap-3">
           <button
             onClick={openCamera}
-            className="w-full rounded-xl bg-emerald-600 px-4 py-3 font-medium text-white active:bg-emerald-700"
+            className="w-full rounded-full bg-accent px-4 py-3.5 font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97] active:opacity-90"
           >
             Take Photo
           </button>
-          <label className="w-full cursor-pointer rounded-xl border border-slate-300 px-4 py-3 text-center font-medium text-slate-700 active:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:active:bg-slate-800">
+          <label className="w-full cursor-pointer rounded-full border border-slate-300 px-4 py-3.5 text-center font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:active:bg-slate-800">
             Choose from Library
             <input
               type="file"
@@ -208,7 +208,7 @@ export default function Capture() {
           </label>
           <button
             onClick={handleManualEntry}
-            className="w-full rounded-xl border border-slate-300 px-4 py-3 text-center font-medium text-slate-700 active:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:active:bg-slate-800"
+            className="w-full rounded-full border border-slate-300 px-4 py-3.5 text-center font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:active:bg-slate-800"
           >
             Enter Manually
           </button>
@@ -237,7 +237,7 @@ export default function Capture() {
           <button
             onClick={cancelCamera}
             aria-label="Cancel"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-xl text-white"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-xl text-white backdrop-blur transition-transform duration-150 active:scale-90"
           >
             ✕
           </button>
@@ -245,7 +245,7 @@ export default function Capture() {
             <button
               onClick={toggleTorch}
               aria-label={torchOn ? 'Turn flash off' : 'Turn flash on'}
-              className={`flex h-10 w-10 items-center justify-center rounded-full text-xl ${
+              className={`flex h-10 w-10 items-center justify-center rounded-full text-xl backdrop-blur transition-all duration-150 active:scale-90 ${
                 torchOn ? 'bg-amber-400 text-black' : 'bg-black/50 text-white'
               }`}
             >
@@ -261,7 +261,7 @@ export default function Capture() {
           <button
             onClick={capturePhoto}
             aria-label="Capture photo"
-            className="h-16 w-16 rounded-full border-4 border-white bg-white/30 active:bg-white/50"
+            className="h-16 w-16 rounded-full border-4 border-white bg-white/30 transition-transform duration-150 active:scale-90 active:bg-white/50"
           />
         </div>
       </div>
@@ -272,12 +272,12 @@ export default function Capture() {
     return (
       <div className="flex flex-col items-center justify-center gap-4 px-6 py-24 text-center">
         {imageDataUrl && (
-          <img src={imageDataUrl} alt="Receipt preview" className="h-40 w-auto rounded-lg shadow" />
+          <img src={imageDataUrl} alt="Receipt preview" className="h-40 w-auto rounded-2xl shadow" />
         )}
         <p className="font-medium text-slate-700 dark:text-slate-300">Reading receipt… {progress}%</p>
         <div className="h-2 w-full max-w-xs overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
           <div
-            className="h-full bg-emerald-600 transition-all"
+            className="h-full bg-accent transition-all"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -291,10 +291,10 @@ export default function Capture() {
         {imageDataUrl ? 'Review expense' : 'New expense'}
       </h1>
       {error && (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">{error}</p>
+        <p className="rounded-2xl bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">{error}</p>
       )}
       {imageDataUrl && (
-        <img src={imageDataUrl} alt="Receipt" className="max-h-56 w-full rounded-lg object-contain shadow" />
+        <img src={imageDataUrl} alt="Receipt" className="max-h-56 w-full rounded-2xl object-contain shadow" />
       )}
 
       <label className="flex flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
@@ -302,7 +302,7 @@ export default function Capture() {
         <input
           value={merchant}
           onChange={(e) => setMerchant(e.target.value)}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         />
       </label>
 
@@ -313,7 +313,7 @@ export default function Capture() {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
           />
         </label>
         <label className="flex flex-1 flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
@@ -324,7 +324,7 @@ export default function Capture() {
             step="0.01"
             value={total}
             onChange={(e) => setTotal(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
           />
         </label>
       </div>
@@ -334,7 +334,7 @@ export default function Capture() {
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value as Category)}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         >
           {CATEGORIES.map((c) => (
             <option key={c} value={c}>
@@ -347,14 +347,14 @@ export default function Capture() {
       <div className="mt-2 flex gap-3">
         <button
           onClick={reset}
-          className="flex-1 rounded-xl border border-slate-300 px-4 py-3 font-medium text-slate-700 active:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:active:bg-slate-800"
+          className="flex-1 rounded-full border border-slate-300 px-4 py-3.5 font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:active:bg-slate-800"
         >
           {imageDataUrl ? 'Retake' : 'Cancel'}
         </button>
         <button
           onClick={handleSave}
           disabled={stage === 'saving'}
-          className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 font-medium text-white active:bg-emerald-700 disabled:opacity-60"
+          className="flex-1 rounded-full bg-accent px-4 py-3.5 font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97] active:opacity-90 disabled:opacity-60 disabled:active:scale-100"
         >
           {stage === 'saving' ? 'Saving…' : 'Save Expense'}
         </button>

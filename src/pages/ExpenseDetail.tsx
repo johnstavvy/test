@@ -49,7 +49,7 @@ export default function ExpenseDetail() {
         <img
           src={expense.imageDataUrl}
           alt="Receipt"
-          className="max-h-56 w-full rounded-lg object-contain shadow"
+          className="max-h-56 w-full rounded-2xl object-contain shadow"
         />
       )}
 
@@ -58,7 +58,7 @@ export default function ExpenseDetail() {
         <input
           value={expense.merchant}
           onChange={(e) => set('merchant', e.target.value)}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         />
       </label>
 
@@ -69,7 +69,7 @@ export default function ExpenseDetail() {
             type="date"
             value={expense.date}
             onChange={(e) => set('date', e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
           />
         </label>
         <label className="flex flex-1 flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
@@ -80,7 +80,7 @@ export default function ExpenseDetail() {
             step="0.01"
             value={expense.total}
             onChange={(e) => set('total', parseFloat(e.target.value) || 0)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
           />
         </label>
       </div>
@@ -90,7 +90,7 @@ export default function ExpenseDetail() {
         <select
           value={expense.category}
           onChange={(e) => set('category', e.target.value as Category)}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         >
           {CATEGORIES.map((c) => (
             <option key={c} value={c}>
@@ -103,20 +103,20 @@ export default function ExpenseDetail() {
       {expense.rawText && (
         <details className="text-sm text-slate-500 dark:text-slate-400">
           <summary className="cursor-pointer font-medium">Raw scanned text</summary>
-          <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-xs dark:bg-slate-800">{expense.rawText}</pre>
+          <pre className="mt-2 whitespace-pre-wrap rounded-2xl bg-slate-50 p-3 text-xs dark:bg-slate-800">{expense.rawText}</pre>
         </details>
       )}
 
       <div className="mt-2 flex gap-3">
         <button
           onClick={handleDelete}
-          className="flex-1 rounded-xl border border-red-300 px-4 py-3 font-medium text-red-600 active:bg-red-50 dark:border-red-800 dark:text-red-400 dark:active:bg-red-950"
+          className="flex-1 rounded-full border border-red-300 px-4 py-3.5 font-medium text-red-600 transition-transform duration-150 active:scale-[0.97] active:bg-red-50 dark:border-red-800 dark:text-red-400 dark:active:bg-red-950"
         >
           Delete
         </button>
         <button
           onClick={handleSave}
-          className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 font-medium text-white active:bg-emerald-700"
+          className="flex-1 rounded-full bg-accent px-4 py-3.5 font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97] active:opacity-90"
         >
           {saved ? 'Saved ✓' : 'Save Changes'}
         </button>

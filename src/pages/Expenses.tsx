@@ -47,7 +47,7 @@ export default function Expenses() {
           <li key={e.id}>
             <Link
               to={`/expense/${e.id}`}
-              className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700"
+              className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700"
             >
               <div className="min-w-0">
                 <p className="truncate font-medium text-slate-900 dark:text-slate-100">{e.merchant}</p>

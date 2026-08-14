@@ -24,7 +24,7 @@ function BarList({ rows }: { rows: { label: string; total: number }[] }) {
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
             <div
-              className="h-full rounded-full bg-emerald-600"
+              className="h-full rounded-full bg-accent transition-all duration-300"
               style={{ width: `${Math.max((r.total / max) * 100, 4)}%` }}
             />
           </div>

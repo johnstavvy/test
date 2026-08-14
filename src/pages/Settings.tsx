@@ -7,7 +7,7 @@ export default function Settings() {
     <div className="flex flex-col gap-4 px-4 py-6">
       <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Settings</h1>
 
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+      <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <div>
           <p className="font-medium text-slate-900 dark:text-slate-100">Dark mode</p>
           <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -18,8 +18,8 @@ export default function Settings() {
           role="switch"
           aria-checked={theme === 'dark'}
           onClick={toggleTheme}
-          className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
-            theme === 'dark' ? 'bg-emerald-600' : 'bg-slate-300'
+          className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200 ${
+            theme === 'dark' ? 'bg-accent' : 'bg-slate-300 dark:bg-slate-600'
           }`}
         >
           <span

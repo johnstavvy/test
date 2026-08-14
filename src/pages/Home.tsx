@@ -64,7 +64,7 @@ export default function Home() {
           <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">{currency.format(weekTotal)}</h1>
         </div>
 
-        <p className="h-4 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+        <p className="h-4 text-sm font-medium text-accent">
           {selectedDay && `${longLabel(selectedDay)} · ${currency.format(dailyTotals[selectedDay])}`}
         </p>
 
@@ -81,16 +81,16 @@ export default function Home() {
                 className="flex h-24 flex-1 flex-col items-center justify-end gap-1.5"
               >
                 <div
-                  className={`w-full max-w-[24px] rounded-t bg-emerald-600 transition-all ${
-                    isSelected ? 'ring-2 ring-emerald-900 dark:ring-emerald-300' : ''
+                  className={`w-full max-w-[24px] rounded-t bg-accent transition-all duration-200 ${
+                    isSelected
+                      ? 'ring-2 ring-accent ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900'
+                      : ''
                   }`}
                   style={{ height: `${heightPct}%` }}
                 />
                 <span
-                  className={`text-xs ${
-                    isSelected
-                      ? 'font-semibold text-emerald-700 dark:text-emerald-400'
-                      : 'text-slate-400 dark:text-slate-500'
+                  className={`text-xs transition-colors ${
+                    isSelected ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'
                   }`}
                 >
                   {shortLabel(iso)}
@@ -105,7 +105,7 @@ export default function Home() {
         <button
           onClick={() => setRecentOpen((open) => !open)}
           aria-expanded={recentOpen}
-          className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+          className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800"
         >
           <span className="font-medium text-slate-900 dark:text-slate-100">Recent Expenses</span>
           <span
@@ -129,7 +129,7 @@ export default function Home() {
               <Link
                 key={e.id}
                 to={`/expense/${e.id}`}
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700"
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700"
               >
                 <div className="min-w-0">
                   <p className="truncate font-medium text-slate-900 dark:text-slate-100">{e.merchant}</p>
@@ -142,10 +142,7 @@ export default function Home() {
             ))}
 
             {expenses !== null && expenses.length > recent.length && (
-              <Link
-                to="/expenses"
-                className="py-2 text-center text-sm font-medium text-emerald-600 dark:text-emerald-400"
-              >
+              <Link to="/expenses" className="py-2 text-center text-sm font-medium text-accent">
                 View all expenses
               </Link>
             )}
