@@ -1,0 +1,34 @@
+import { useTheme } from '../lib/theme'
+
+export default function Settings() {
+  const { theme, toggleTheme } = useTheme()
+
+  return (
+    <div className="flex flex-col gap-4 px-4 py-6">
+      <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Settings</h1>
+
+      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div>
+          <p className="font-medium text-slate-900 dark:text-slate-100">Dark mode</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Switch between light and dark appearance.
+          </p>
+        </div>
+        <button
+          role="switch"
+          aria-checked={theme === 'dark'}
+          onClick={toggleTheme}
+          className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+            theme === 'dark' ? 'bg-emerald-600' : 'bg-slate-300'
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+              theme === 'dark' ? 'translate-x-5' : 'translate-x-0.5'
+            }`}
+          />
+        </button>
+      </div>
+    </div>
+  )
+}

@@ -15,7 +15,7 @@ export default function ExpenseDetail() {
   }, [id])
 
   if (!expense) {
-    return <p className="px-4 py-6 text-slate-500">Loading…</p>
+    return <p className="px-4 py-6 text-slate-500 dark:text-slate-400">Loading…</p>
   }
 
   function set<K extends keyof Expense>(key: K, value: Expense[K]) {
@@ -43,7 +43,7 @@ export default function ExpenseDetail() {
 
   return (
     <div className="flex flex-col gap-4 px-4 py-6">
-      <h1 className="text-lg font-semibold text-slate-900">Edit expense</h1>
+      <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Edit expense</h1>
 
       {expense.imageDataUrl && (
         <img
@@ -53,26 +53,26 @@ export default function ExpenseDetail() {
         />
       )}
 
-      <label className="flex flex-col gap-1 text-sm font-medium text-slate-600">
+      <label className="flex flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
         Merchant
         <input
           value={expense.merchant}
           onChange={(e) => set('merchant', e.target.value)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-900"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         />
       </label>
 
       <div className="flex gap-3">
-        <label className="flex flex-1 flex-col gap-1 text-sm font-medium text-slate-600">
+        <label className="flex flex-1 flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
           Date
           <input
             type="date"
             value={expense.date}
             onChange={(e) => set('date', e.target.value)}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-900"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
           />
         </label>
-        <label className="flex flex-1 flex-col gap-1 text-sm font-medium text-slate-600">
+        <label className="flex flex-1 flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
           Total ($)
           <input
             type="number"
@@ -80,17 +80,17 @@ export default function ExpenseDetail() {
             step="0.01"
             value={expense.total}
             onChange={(e) => set('total', parseFloat(e.target.value) || 0)}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-900"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
           />
         </label>
       </div>
 
-      <label className="flex flex-col gap-1 text-sm font-medium text-slate-600">
+      <label className="flex flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
         Category
         <select
           value={expense.category}
           onChange={(e) => set('category', e.target.value as Category)}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-base text-slate-900"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         >
           {CATEGORIES.map((c) => (
             <option key={c} value={c}>
@@ -101,16 +101,16 @@ export default function ExpenseDetail() {
       </label>
 
       {expense.rawText && (
-        <details className="text-sm text-slate-500">
+        <details className="text-sm text-slate-500 dark:text-slate-400">
           <summary className="cursor-pointer font-medium">Raw scanned text</summary>
-          <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-xs">{expense.rawText}</pre>
+          <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-xs dark:bg-slate-800">{expense.rawText}</pre>
         </details>
       )}
 
       <div className="mt-2 flex gap-3">
         <button
           onClick={handleDelete}
-          className="flex-1 rounded-xl border border-red-300 px-4 py-3 font-medium text-red-600 active:bg-red-50"
+          className="flex-1 rounded-xl border border-red-300 px-4 py-3 font-medium text-red-600 active:bg-red-50 dark:border-red-800 dark:text-red-400 dark:active:bg-red-950"
         >
           Delete
         </button>
