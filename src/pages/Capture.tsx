@@ -66,11 +66,18 @@ export default function Capture() {
         video: { facingMode: 'environment' },
         audio: false,
       })
-      streamRef.current = stream
       const track = stream.getVideoTracks()[0]
-      trackRef.current = track
       const capabilities = track.getCapabilities?.() as TorchCapabilities | undefined
-      setTorchSupported(!!capabilities?.torch)
+      if (!capabilities?.torch) {
+        // This browser can't control flash from a web page (e.g. iOS Safari) — use the
+        // device's native camera app instead so photos still get its own flash handling.
+        stream.getTracks().forEach((t) => t.stop())
+        fileInputRef.current?.click()
+        return
+      }
+      streamRef.current = stream
+      trackRef.current = track
+      setTorchSupported(true)
       setTorchOn(false)
       setStage('camera')
     } catch (err) {
