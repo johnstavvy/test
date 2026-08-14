@@ -15,35 +15,11 @@ const NAV_ITEMS = [
   { to: '/settings', label: 'Settings', icon: '⚙️', end: false },
 ]
 
-const EDGE_ZONE = 24
 const SWIPE_THRESHOLD = 50
 
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const openSwipeStart = useRef<{ x: number; y: number } | null>(null)
   const closeSwipeStart = useRef<number | null>(null)
-
-  function handleAppTouchStart(e: React.TouchEvent) {
-    if (menuOpen) return
-    const t = e.touches[0]
-    openSwipeStart.current = t.clientX <= EDGE_ZONE ? { x: t.clientX, y: t.clientY } : null
-  }
-
-  function handleAppTouchMove(e: React.TouchEvent) {
-    const start = openSwipeStart.current
-    if (!start) return
-    const t = e.touches[0]
-    const dx = t.clientX - start.x
-    const dy = t.clientY - start.y
-    if (Math.abs(dy) > Math.abs(dx)) {
-      openSwipeStart.current = null
-      return
-    }
-    if (dx > SWIPE_THRESHOLD) {
-      setMenuOpen(true)
-      openSwipeStart.current = null
-    }
-  }
 
   function handleNavTouchStart(e: React.TouchEvent) {
     closeSwipeStart.current = e.touches[0].clientX
@@ -60,12 +36,7 @@ export default function App() {
   }
 
   return (
-    <div
-      className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-50 dark:bg-slate-900"
-      onTouchStart={handleAppTouchStart}
-      onTouchMove={handleAppTouchMove}
-      onTouchEnd={() => (openSwipeStart.current = null)}
-    >
+    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-50 dark:bg-slate-900">
       <header
         className="sticky top-0 z-20 flex items-center border-b border-slate-200 bg-white/95 px-2 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
