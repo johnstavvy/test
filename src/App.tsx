@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import logo from './assets/logo.png'
 import Home from './pages/Home'
@@ -38,6 +39,26 @@ function BottomBarItem({ item }: { item: (typeof NAV_ITEMS)[number] }) {
   )
 }
 
+function useScrolledPastTop(threshold = 16) {
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    let ticking = false
+    function onScroll() {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => {
+        setScrolled(window.scrollY > threshold)
+        ticking = false
+      })
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [threshold])
+
+  return scrolled
+}
+
 function SidebarItem({ item }: { item: (typeof NAV_ITEMS)[number] }) {
   return (
     <NavLink
@@ -57,6 +78,7 @@ function SidebarItem({ item }: { item: (typeof NAV_ITEMS)[number] }) {
 
 export default function App() {
   const location = useLocation()
+  const scrolled = useScrolledPastTop()
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-50 dark:bg-slate-900 lg:mx-0 lg:max-w-none lg:flex-row">
@@ -93,7 +115,9 @@ export default function App() {
         </main>
 
         <nav
-          className="fixed inset-x-4 z-40 mx-auto max-w-md rounded-full border border-white/60 bg-white/70 shadow-lg shadow-slate-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-black/40 lg:hidden"
+          className={`fixed inset-x-4 z-40 mx-auto max-w-md origin-bottom rounded-full border border-white/60 bg-white/70 shadow-lg shadow-slate-900/10 backdrop-blur-xl transition-transform duration-300 ease-out dark:border-white/10 dark:bg-slate-900/70 dark:shadow-black/40 lg:hidden ${
+            scrolled ? 'scale-75' : 'scale-100'
+          }`}
           style={{ bottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
         >
           <div className="flex justify-around px-1 py-1.5">
