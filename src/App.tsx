@@ -60,7 +60,7 @@ export default function App() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-50 dark:bg-slate-900 lg:mx-0 lg:max-w-none lg:flex-row">
-      <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:shrink-0 lg:flex-col lg:gap-1 lg:border-r lg:border-slate-200/80 lg:bg-white/80 lg:p-4 lg:backdrop-blur-lg dark:lg:border-slate-800 dark:lg:bg-slate-900/80">
+      <aside className="hidden lg:sticky lg:top-4 lg:m-4 lg:flex lg:h-[calc(100vh-2rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-1 lg:rounded-3xl lg:border lg:border-white/60 lg:bg-white/70 lg:p-4 lg:shadow-lg lg:shadow-slate-900/10 lg:backdrop-blur-xl dark:lg:border-white/10 dark:lg:bg-slate-900/70 dark:lg:shadow-black/40">
         <div className="flex items-center gap-2 px-3 pb-4 pt-1">
           <img src={logo} alt="" className="h-7 w-7 rounded-lg" />
           <span className="font-semibold text-slate-900 dark:text-slate-100">Pecunia</span>
@@ -79,7 +79,7 @@ export default function App() {
           <span className="font-semibold text-slate-900 dark:text-slate-100">Pecunia</span>
         </header>
 
-        <main className="flex-1 pb-24 lg:mx-auto lg:w-full lg:max-w-5xl lg:pb-10">
+        <main className="flex-1 pb-32 lg:mx-auto lg:w-full lg:max-w-5xl lg:pb-10">
           <div key={location.pathname} className="page-transition">
             <Routes location={location}>
               <Route path="/" element={<Home />} />
@@ -92,8 +92,11 @@ export default function App() {
           </div>
         </main>
 
-        <nav className="fixed bottom-0 left-1/2 z-40 w-full max-w-md -translate-x-1/2 border-t border-slate-200/80 bg-white/85 backdrop-blur-lg dark:border-slate-800 dark:bg-slate-900/85 lg:hidden">
-          <div className="flex justify-around" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <nav
+          className="fixed inset-x-4 z-40 mx-auto max-w-md rounded-full border border-white/60 bg-white/70 shadow-lg shadow-slate-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-black/40 lg:hidden"
+          style={{ bottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
+        >
+          <div className="flex justify-around px-1 py-1.5">
             {NAV_ITEMS.map((item) => (
               <BottomBarItem key={item.to} item={item} />
             ))}
