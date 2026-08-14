@@ -21,3 +21,15 @@ export function fileToResizedDataUrl(file: File, maxDimension = 1600): Promise<s
     reader.readAsDataURL(file)
   })
 }
+
+/** Capture the current frame of a live video stream as a downscaled JPEG data URL. */
+export function videoFrameToResizedDataUrl(video: HTMLVideoElement, maxDimension = 1600): string {
+  const scale = Math.min(1, maxDimension / Math.max(video.videoWidth, video.videoHeight))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(video.videoWidth * scale)
+  canvas.height = Math.round(video.videoHeight * scale)
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Canvas not supported')
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+  return canvas.toDataURL('image/jpeg', 0.85)
+}

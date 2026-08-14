@@ -1,19 +1,32 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CATEGORIES, type Category } from '../db'
-import { fileToResizedDataUrl } from '../lib/image'
+import { fileToResizedDataUrl, videoFrameToResizedDataUrl } from '../lib/image'
 import { recognizeReceiptText } from '../lib/ocr'
 import { parseReceiptText } from '../lib/parseReceipt'
 import { addExpense } from '../lib/expenses'
 
-type Stage = 'idle' | 'scanning' | 'review' | 'saving'
+type Stage = 'idle' | 'camera' | 'scanning' | 'review' | 'saving'
+
+type TorchCapabilities = MediaTrackCapabilities & { torch?: boolean }
+type TorchConstraintSet = MediaTrackConstraintSet & { torch?: boolean }
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10)
+}
 
 export default function Capture() {
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const trackRef = useRef<MediaStreamTrack | null>(null)
+
   const [stage, setStage] = useState<Stage>('idle')
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const [torchOn, setTorchOn] = useState(false)
+  const [torchSupported, setTorchSupported] = useState(false)
 
   const [imageDataUrl, setImageDataUrl] = useState('')
   const [rawText, setRawText] = useState('')
@@ -22,13 +35,82 @@ export default function Capture() {
   const [total, setTotal] = useState('')
   const [category, setCategory] = useState<Category>('Other')
 
-  async function handleFile(file: File) {
+  useEffect(() => {
+    if (stage === 'camera' && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current
+    }
+  }, [stage])
+
+  useEffect(() => {
+    return () => {
+      streamRef.current?.getTracks().forEach((t) => t.stop())
+    }
+  }, [])
+
+  function closeCamera() {
+    streamRef.current?.getTracks().forEach((t) => t.stop())
+    streamRef.current = null
+    trackRef.current = null
+    setTorchOn(false)
+    setTorchSupported(false)
+  }
+
+  async function openCamera() {
+    setError(null)
+    if (!navigator.mediaDevices?.getUserMedia) {
+      fileInputRef.current?.click()
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+        audio: false,
+      })
+      streamRef.current = stream
+      const track = stream.getVideoTracks()[0]
+      trackRef.current = track
+      const capabilities = track.getCapabilities?.() as TorchCapabilities | undefined
+      setTorchSupported(!!capabilities?.torch)
+      setTorchOn(false)
+      setStage('camera')
+    } catch (err) {
+      console.error(err)
+      // Camera permission denied or unavailable — fall back to the device's native camera app.
+      fileInputRef.current?.click()
+    }
+  }
+
+  function cancelCamera() {
+    closeCamera()
+    setStage('idle')
+  }
+
+  async function toggleTorch() {
+    const track = trackRef.current
+    if (!track) return
+    const next = !torchOn
+    try {
+      await track.applyConstraints({ advanced: [{ torch: next } as TorchConstraintSet] })
+      setTorchOn(next)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  function capturePhoto() {
+    const video = videoRef.current
+    if (!video) return
+    const dataUrl = videoFrameToResizedDataUrl(video)
+    closeCamera()
+    processImage(dataUrl)
+  }
+
+  async function processImage(resized: string) {
     setError(null)
     setStage('scanning')
     setProgress(0)
+    setImageDataUrl(resized)
     try {
-      const resized = await fileToResizedDataUrl(file)
-      setImageDataUrl(resized)
       const text = await recognizeReceiptText(resized, setProgress)
       setRawText(text)
       const parsed = parseReceiptText(text)
@@ -42,6 +124,22 @@ export default function Capture() {
       setError('Could not read that receipt. You can still enter the details manually.')
       setStage('review')
     }
+  }
+
+  async function handleFile(file: File) {
+    const resized = await fileToResizedDataUrl(file)
+    processImage(resized)
+  }
+
+  function handleManualEntry() {
+    setError(null)
+    setImageDataUrl('')
+    setRawText('')
+    setMerchant('')
+    setDate(todayIso())
+    setTotal('')
+    setCategory('Other')
+    setStage('review')
   }
 
   async function handleSave() {
@@ -80,9 +178,14 @@ export default function Capture() {
             Take a photo or upload an image. We'll pull out the merchant, date, and total automatically.
           </p>
         </div>
+        {error && (
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+            {error}
+          </p>
+        )}
         <div className="flex w-full max-w-xs flex-col gap-3">
           <button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={openCamera}
             className="w-full rounded-xl bg-emerald-600 px-4 py-3 font-medium text-white active:bg-emerald-700"
           >
             Take Photo
@@ -96,6 +199,12 @@ export default function Capture() {
               onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
             />
           </label>
+          <button
+            onClick={handleManualEntry}
+            className="w-full rounded-xl border border-slate-300 px-4 py-3 text-center font-medium text-slate-700 active:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:active:bg-slate-800"
+          >
+            Enter Manually
+          </button>
         </div>
         <input
           ref={fileInputRef}
@@ -105,6 +214,49 @@ export default function Capture() {
           className="hidden"
           onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
         />
+      </div>
+    )
+  }
+
+  if (stage === 'camera') {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-black">
+        <video ref={videoRef} autoPlay playsInline muted className="min-h-0 flex-1 object-cover" />
+
+        <div
+          className="absolute inset-x-0 top-0 flex items-center justify-between p-4"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}
+        >
+          <button
+            onClick={cancelCamera}
+            aria-label="Cancel"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-xl text-white"
+          >
+            ✕
+          </button>
+          {torchSupported && (
+            <button
+              onClick={toggleTorch}
+              aria-label={torchOn ? 'Turn flash off' : 'Turn flash on'}
+              className={`flex h-10 w-10 items-center justify-center rounded-full text-xl ${
+                torchOn ? 'bg-amber-400 text-black' : 'bg-black/50 text-white'
+              }`}
+            >
+              ⚡
+            </button>
+          )}
+        </div>
+
+        <div
+          className="absolute inset-x-0 bottom-0 flex justify-center pb-8"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)' }}
+        >
+          <button
+            onClick={capturePhoto}
+            aria-label="Capture photo"
+            className="h-16 w-16 rounded-full border-4 border-white bg-white/30 active:bg-white/50"
+          />
+        </div>
       </div>
     )
   }
@@ -128,7 +280,9 @@ export default function Capture() {
 
   return (
     <div className="flex flex-col gap-4 px-4 py-6">
-      <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Review expense</h1>
+      <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+        {imageDataUrl ? 'Review expense' : 'New expense'}
+      </h1>
       {error && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">{error}</p>
       )}
@@ -188,7 +342,7 @@ export default function Capture() {
           onClick={reset}
           className="flex-1 rounded-xl border border-slate-300 px-4 py-3 font-medium text-slate-700 active:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:active:bg-slate-800"
         >
-          Retake
+          {imageDataUrl ? 'Retake' : 'Cancel'}
         </button>
         <button
           onClick={handleSave}
