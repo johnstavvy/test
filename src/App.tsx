@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import logo from './assets/logo.png'
 import Home from './pages/Home'
 import Expenses from './pages/Expenses'
 import Capture from './pages/Capture'
@@ -60,7 +61,10 @@ export default function App() {
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-50 dark:bg-slate-900 lg:mx-0 lg:max-w-none lg:flex-row">
       <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:shrink-0 lg:flex-col lg:gap-1 lg:border-r lg:border-slate-200/80 lg:bg-white/80 lg:p-4 lg:backdrop-blur-lg dark:lg:border-slate-800 dark:lg:bg-slate-900/80">
-        <span className="px-3 pb-4 pt-1 font-semibold text-slate-900 dark:text-slate-100">Expense Scanner</span>
+        <div className="flex items-center gap-2 px-3 pb-4 pt-1">
+          <img src={logo} alt="" className="h-7 w-7 rounded-lg" />
+          <span className="font-semibold text-slate-900 dark:text-slate-100">Pecunia</span>
+        </div>
         {NAV_ITEMS.map((item) => (
           <SidebarItem key={item.to} item={item} />
         ))}
@@ -68,10 +72,11 @@ export default function App() {
 
       <div className="flex min-h-screen flex-1 flex-col lg:min-h-0">
         <header
-          className="sticky top-0 z-20 flex items-center justify-center border-b border-slate-200/80 bg-white/80 py-3 backdrop-blur-lg dark:border-slate-800 dark:bg-slate-900/80 lg:hidden"
+          className="sticky top-0 z-20 flex items-center justify-center gap-2 border-b border-slate-200/80 bg-white/80 py-3 backdrop-blur-lg dark:border-slate-800 dark:bg-slate-900/80 lg:hidden"
           style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.5rem)' }}
         >
-          <span className="font-semibold text-slate-900 dark:text-slate-100">Expense Scanner</span>
+          <img src={logo} alt="" className="h-6 w-6 rounded-md" />
+          <span className="font-semibold text-slate-900 dark:text-slate-100">Pecunia</span>
         </header>
 
         <main className="flex-1 pb-24 lg:mx-auto lg:w-full lg:max-w-5xl lg:pb-10">
