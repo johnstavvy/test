@@ -1,70 +1,157 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Expense } from '../db'
 import { listExpenses } from '../lib/expenses'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Groceries: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
-  Dining: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400',
-  Transport: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
-  Shopping: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
-  Utilities: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400',
-  Health: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400',
-  Entertainment: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400',
-  Travel: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-400',
-  Other: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
+function isoDate(d: Date) {
+  return d.toISOString().slice(0, 10)
+}
+
+function lastSevenDays() {
+  const days: string[] = []
+  const today = new Date()
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i)
+    days.push(isoDate(d))
+  }
+  return days
+}
+
+function dateFromIso(iso: string) {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+function shortLabel(iso: string) {
+  return dateFromIso(iso).toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2)
+}
+
+function longLabel(iso: string) {
+  return dateFromIso(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
 export default function Home() {
   const [expenses, setExpenses] = useState<Expense[] | null>(null)
+  const [selectedDay, setSelectedDay] = useState<string | null>(null)
+  const [recentOpen, setRecentOpen] = useState(true)
 
   useEffect(() => {
     listExpenses().then(setExpenses)
   }, [])
 
-  const total = expenses?.reduce((sum, e) => sum + e.total, 0) ?? 0
+  const days = useMemo(lastSevenDays, [])
+
+  const dailyTotals = useMemo(() => {
+    const totals: Record<string, number> = {}
+    for (const day of days) totals[day] = 0
+    for (const e of expenses ?? []) {
+      if (e.date in totals) totals[e.date] += e.total
+    }
+    return totals
+  }, [expenses, days])
+
+  const weekTotal = days.reduce((sum, day) => sum + dailyTotals[day], 0)
+  const maxValue = Math.max(...days.map((d) => dailyTotals[d]), 1)
+  const recent = expenses?.slice(0, 5) ?? []
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-6">
-      <div>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Total tracked</p>
-        <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">{currency.format(total)}</h1>
-      </div>
-
-      {expenses === null && <p className="text-slate-500 dark:text-slate-400">Loading…</p>}
-
-      {expenses !== null && expenses.length === 0 && (
-        <div className="mt-10 flex flex-col items-center gap-3 text-center text-slate-500 dark:text-slate-400">
-          <div className="text-4xl">🧾</div>
-          <p>No expenses yet. Tap "Scan" below to add your first receipt.</p>
+    <div className="flex flex-col">
+      <section className="flex flex-col gap-3 px-4 pb-5 pt-6" style={{ minHeight: '25dvh' }}>
+        <div>
+          <p className="text-sm text-slate-500 dark:text-slate-400">This week</p>
+          <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">{currency.format(weekTotal)}</h1>
         </div>
-      )}
 
-      <ul className="flex flex-col gap-2">
-        {expenses?.map((e) => (
-          <li key={e.id}>
-            <Link
-              to={`/expense/${e.id}`}
-              className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700"
-            >
-              <div className="min-w-0">
-                <p className="truncate font-medium text-slate-900 dark:text-slate-100">{e.merchant}</p>
-                <div className="mt-1 flex items-center gap-2">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${CATEGORY_COLORS[e.category] ?? CATEGORY_COLORS.Other}`}
-                  >
-                    {e.category}
-                  </span>
+        <p className="h-4 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+          {selectedDay && `${longLabel(selectedDay)} · ${currency.format(dailyTotals[selectedDay])}`}
+        </p>
+
+        <div className="flex flex-1 items-end justify-between gap-2 border-b border-slate-200 pb-0 dark:border-slate-700">
+          {days.map((iso) => {
+            const value = dailyTotals[iso]
+            const heightPct = Math.max((value / maxValue) * 100, value > 0 ? 8 : 3)
+            const isSelected = selectedDay === iso
+            return (
+              <button
+                key={iso}
+                onClick={() => setSelectedDay((prev) => (prev === iso ? null : iso))}
+                aria-label={`${longLabel(iso)}: ${currency.format(value)}`}
+                className="flex h-24 flex-1 flex-col items-center justify-end gap-1.5"
+              >
+                <div
+                  className={`w-full max-w-[24px] rounded-t bg-emerald-600 transition-all ${
+                    isSelected ? 'ring-2 ring-emerald-900 dark:ring-emerald-300' : ''
+                  }`}
+                  style={{ height: `${heightPct}%` }}
+                />
+                <span
+                  className={`text-xs ${
+                    isSelected
+                      ? 'font-semibold text-emerald-700 dark:text-emerald-400'
+                      : 'text-slate-400 dark:text-slate-500'
+                  }`}
+                >
+                  {shortLabel(iso)}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-2 px-4 pb-6">
+        <button
+          onClick={() => setRecentOpen((open) => !open)}
+          aria-expanded={recentOpen}
+          className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+        >
+          <span className="font-medium text-slate-900 dark:text-slate-100">Recent Expenses</span>
+          <span
+            className={`text-slate-400 transition-transform dark:text-slate-500 ${recentOpen ? 'rotate-180' : ''}`}
+          >
+            ⌄
+          </span>
+        </button>
+
+        {recentOpen && (
+          <div className="flex flex-col gap-2">
+            {expenses === null && <p className="px-1 py-4 text-sm text-slate-500 dark:text-slate-400">Loading…</p>}
+
+            {expenses !== null && recent.length === 0 && (
+              <p className="px-1 py-4 text-center text-sm text-slate-500 dark:text-slate-400">
+                No expenses yet. Tap "Scan" below to add your first receipt.
+              </p>
+            )}
+
+            {recent.map((e) => (
+              <Link
+                key={e.id}
+                to={`/expense/${e.id}`}
+                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700"
+              >
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-slate-900 dark:text-slate-100">{e.merchant}</p>
                   <span className="text-xs text-slate-400 dark:text-slate-500">{e.date}</span>
                 </div>
-              </div>
-              <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">{currency.format(e.total)}</p>
-            </Link>
-          </li>
-        ))}
-      </ul>
+                <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
+                  {currency.format(e.total)}
+                </p>
+              </Link>
+            ))}
+
+            {expenses !== null && expenses.length > recent.length && (
+              <Link
+                to="/expenses"
+                className="py-2 text-center text-sm font-medium text-emerald-600 dark:text-emerald-400"
+              >
+                View all expenses
+              </Link>
+            )}
+          </div>
+        )}
+      </section>
     </div>
   )
 }

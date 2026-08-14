@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { NavLink, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
+import Expenses from './pages/Expenses'
 import Capture from './pages/Capture'
 import Summary from './pages/Summary'
 import ExpenseDetail from './pages/ExpenseDetail'
 import Settings from './pages/Settings'
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Expenses', icon: '📋', end: true },
+  { to: '/', label: 'Home', icon: '🏠', end: true },
+  { to: '/expenses', label: 'Expenses', icon: '📋', end: false },
   { to: '/capture', label: 'Scan', icon: '🧾', end: false },
   { to: '/summary', label: 'Summary', icon: '📊', end: false },
   { to: '/settings', label: 'Settings', icon: '⚙️', end: false },
@@ -37,6 +39,7 @@ export default function App() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/expenses" element={<Expenses />} />
           <Route path="/capture" element={<Capture />} />
           <Route path="/summary" element={<Summary />} />
           <Route path="/expense/:id" element={<ExpenseDetail />} />
