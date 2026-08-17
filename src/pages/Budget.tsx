@@ -242,6 +242,29 @@ function BillForm({
   )
 }
 
+function FrequencyBadge({ recurring, compact }: { recurring: boolean; compact?: boolean }) {
+  const size = compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-xs'
+  if (recurring) {
+    return <span className={`rounded-full bg-accent/15 font-semibold text-accent ${size}`}>Recurring</span>
+  }
+  return (
+    <span className={`rounded-full bg-slate-100 font-medium text-slate-500 dark:bg-slate-700 dark:text-slate-400 ${size}`}>
+      One-time
+    </span>
+  )
+}
+
+function TagBadge({ children, compact }: { children: string; compact?: boolean }) {
+  const size = compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-xs'
+  return (
+    <span
+      className={`truncate rounded-full bg-slate-100 font-medium text-slate-500 dark:bg-slate-700 dark:text-slate-400 ${size}`}
+    >
+      {children}
+    </span>
+  )
+}
+
 function BillListItem({ bill, compact, onClick }: { bill: Bill; compact?: boolean; onClick: () => void }) {
   const days = daysUntilDue(bill.dueDay)
   const soon = days <= 3
@@ -253,24 +276,16 @@ function BillListItem({ bill, compact, onClick }: { bill: Bill; compact?: boolea
         className="flex w-full flex-col items-start gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700"
       >
         <p className="w-full truncate text-sm font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
-        {bill.paymentSource && (
-          <p className="w-full truncate text-[10px] text-slate-400 dark:text-slate-500">{bill.paymentSource}</p>
-        )}
-        <div className="flex w-full items-center justify-between gap-1">
-          <span
-            className={`truncate text-[11px] ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}
-          >
-            {dueLabel(days, bill.dueDay)}
-          </span>
-          <span className="shrink-0 text-xs font-semibold text-slate-900 dark:text-slate-100">
-            {currency.format(bill.amount)}
-          </span>
-        </div>
-        {!isRecurring(bill) && (
-          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-slate-700 dark:text-slate-400">
-            One-time
-          </span>
-        )}
+        <FrequencyBadge recurring={isRecurring(bill)} compact />
+        {bill.paymentSource && <TagBadge compact>{bill.paymentSource}</TagBadge>}
+        <span
+          className={`truncate text-[11px] ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}
+        >
+          {dueLabel(days, bill.dueDay)}
+        </span>
+        <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+          {currency.format(bill.amount)}
+        </span>
       </button>
     )
   }
@@ -280,26 +295,18 @@ function BillListItem({ bill, compact, onClick }: { bill: Bill; compact?: boolea
       onClick={onClick}
       className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-sm"
     >
-      <div className="min-w-0">
+      <div className="flex min-w-0 flex-col items-start gap-1">
         <p className="truncate font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
-        <div className="mt-1 flex items-center gap-2">
-          <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${BILL_CATEGORY_COLORS[bill.category] ?? BILL_CATEGORY_COLORS.Other}`}
-          >
-            {bill.category}
-          </span>
-          <span className={`text-xs ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}>
-            {dueLabel(days, bill.dueDay)}
-          </span>
-          {!isRecurring(bill) && (
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500 dark:bg-slate-700 dark:text-slate-400">
-              One-time
-            </span>
-          )}
-        </div>
-        {bill.paymentSource && (
-          <p className="mt-0.5 truncate text-xs text-slate-400 dark:text-slate-500">{bill.paymentSource}</p>
-        )}
+        <span
+          className={`rounded-full px-2 py-0.5 text-xs font-medium ${BILL_CATEGORY_COLORS[bill.category] ?? BILL_CATEGORY_COLORS.Other}`}
+        >
+          {bill.category}
+        </span>
+        <FrequencyBadge recurring={isRecurring(bill)} />
+        {bill.paymentSource && <TagBadge>{bill.paymentSource}</TagBadge>}
+        <span className={`text-xs ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}>
+          {dueLabel(days, bill.dueDay)}
+        </span>
       </div>
       <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">{currency.format(bill.amount)}</p>
     </button>
@@ -836,18 +843,12 @@ function IncomeSection({
                       onClick={() => setEditing(income.id)}
                       className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-sm"
                     >
-                      <div className="min-w-0">
+                      <div className="flex min-w-0 flex-col items-start gap-1">
                         <p className="truncate font-medium text-slate-900 dark:text-slate-100">{income.source}</p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-slate-400 dark:text-slate-500">
-                            Paid on the {ordinal(income.payDay)}
-                          </span>
-                          {!isRecurring(income) && (
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500 dark:bg-slate-700 dark:text-slate-400">
-                              One-time
-                            </span>
-                          )}
-                        </div>
+                        <FrequencyBadge recurring={isRecurring(income)} />
+                        <span className="text-xs text-slate-400 dark:text-slate-500">
+                          Paid on the {ordinal(income.payDay)}
+                        </span>
                       </div>
                       <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
                         {currency.format(income.amount)}
