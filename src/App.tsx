@@ -35,11 +35,15 @@ function BottomBarItem({ item, drag }: { item: (typeof NAV_ITEMS)[number]; drag:
       ref={(el) => drag.registerRef(el)}
       to={item.to}
       end={item.end}
+      draggable={false}
       onPointerDown={drag.onPointerDown}
       onClickCapture={drag.onClickCapture}
+      onContextMenu={(e) => e.preventDefault()}
       style={{
         order: drag.orderIndex,
         touchAction: 'none',
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
         transform: drag.isDragging ? `translateX(${drag.dragOffset}px)` : undefined,
         transition: drag.isDragging ? 'none' : undefined,
         zIndex: drag.isDragging ? 10 : undefined,
@@ -88,11 +92,15 @@ function SidebarItem({ item, drag }: { item: (typeof NAV_ITEMS)[number]; drag: N
       ref={(el) => drag.registerRef(el)}
       to={item.to}
       end={item.end}
+      draggable={false}
       onPointerDown={drag.onPointerDown}
       onClickCapture={drag.onClickCapture}
+      onContextMenu={(e) => e.preventDefault()}
       style={{
         order: drag.orderIndex,
         touchAction: 'none',
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
         transform: drag.isDragging ? `translateY(${drag.dragOffset}px)` : undefined,
         transition: drag.isDragging ? 'none' : undefined,
         zIndex: drag.isDragging ? 10 : undefined,

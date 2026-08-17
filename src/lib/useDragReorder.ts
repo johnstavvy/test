@@ -29,6 +29,9 @@ export function useDragReorder(order: string[], setOrder: (order: string[]) => v
 
   function handlePointerDown(key: string, e: ReactPointerEvent) {
     if (e.button !== 0) return
+    // Stops iOS Safari from starting its native "drag this link out" gesture
+    // or text-selection instead of delivering pointermove events to us.
+    e.preventDefault()
     dragKeyRef.current = key
     startPosRef.current = axis === 'x' ? e.clientX : e.clientY
     startRectRef.current = itemRefs.current.get(key)?.getBoundingClientRect() ?? null
