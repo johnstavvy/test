@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { BILL_CATEGORIES, type Bill, type BillCategory, type Expense, type Income } from '../db'
-import { addBill, daysUntilDue, deleteBill, listBills, totalMonthlyBills, updateBill } from '../lib/bills'
+import { addBill, daysUntilDue, deleteBill, effectiveAmount, listBills, totalMonthlyBills, updateBill } from '../lib/bills'
 import { addIncome, deleteIncome, listIncomes, totalMonthlyIncome, updateIncome } from '../lib/income'
 import { listExpenses } from '../lib/expenses'
 import { currentMonthKey } from '../lib/week'
 import { usePeopleNames } from '../lib/people'
+import { isRecurring } from '../lib/recurring'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -43,11 +44,6 @@ function dueLabel(days: number, dueDay: number) {
 // Which of the two household members an entry belongs to; missing/legacy rows default to person 1.
 function personOf(entity: { person?: 1 | 2 }): 1 | 2 {
   return entity.person === 2 ? 2 : 1
-}
-
-// Whether an entry repeats every month; missing/legacy rows default to true (recurring is the norm).
-function isRecurring(entity: { recurring?: boolean }): boolean {
-  return entity.recurring !== false
 }
 
 function FrequencyToggle({ recurring, onChange }: { recurring: boolean; onChange: (recurring: boolean) => void }) {
@@ -268,6 +264,8 @@ function TagBadge({ children, compact }: { children: string; compact?: boolean }
 function BillListItem({ bill, compact, onClick }: { bill: Bill; compact?: boolean; onClick: () => void }) {
   const days = daysUntilDue(bill.dueDay)
   const soon = days <= 3
+  const amount = effectiveAmount(bill)
+  const needsUpdate = amount === 0 && bill.amount !== 0
 
   if (compact) {
     return (
@@ -283,8 +281,11 @@ function BillListItem({ bill, compact, onClick }: { bill: Bill; compact?: boolea
         >
           {dueLabel(days, bill.dueDay)}
         </span>
-        <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-          {currency.format(bill.amount)}
+        <span
+          className={`text-xs font-semibold ${needsUpdate ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-slate-100'}`}
+        >
+          {currency.format(amount)}
+          {needsUpdate && ' · update'}
         </span>
       </button>
     )
@@ -308,7 +309,12 @@ function BillListItem({ bill, compact, onClick }: { bill: Bill; compact?: boolea
           {dueLabel(days, bill.dueDay)}
         </span>
       </div>
-      <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">{currency.format(bill.amount)}</p>
+      <p
+        className={`ml-3 shrink-0 font-semibold ${needsUpdate ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-slate-100'}`}
+      >
+        {currency.format(amount)}
+        {needsUpdate && <span className="block text-right text-[11px] font-medium">update</span>}
+      </p>
     </button>
   )
 }
@@ -384,7 +390,7 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
                   initial={{
                     name: editingBill.name,
                     category: editingBill.category,
-                    amount: editingBill.amount,
+                    amount: effectiveAmount(editingBill),
                     dueDay: editingBill.dueDay,
                     person: personOf(editingBill),
                     paymentSource: editingBill.paymentSource,
@@ -501,7 +507,7 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
                       initial={{
                         name: bill.name,
                         category: bill.category,
-                        amount: bill.amount,
+                        amount: effectiveAmount(bill),
                         dueDay: bill.dueDay,
                         paymentSource: bill.paymentSource,
                         recurring: isRecurring(bill),

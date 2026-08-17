@@ -49,6 +49,7 @@ export interface Bill {
   recurring?: boolean // repeats every month; missing/legacy rows default to true (one-time bills are the exception)
   notes: string
   createdAt: number
+  updatedAt?: number // last time the amount was edited; used to auto-zero stale non-recurring bills after their due day
 }
 
 export interface Income {
