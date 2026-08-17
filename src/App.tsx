@@ -45,7 +45,7 @@ function BottomBarItem({ item, drag }: { item: (typeof NAV_ITEMS)[number]; drag:
         WebkitTouchCallout: 'none',
         WebkitUserSelect: 'none',
         transform: drag.isDragging ? `translateX(${drag.dragOffset}px)` : undefined,
-        transition: drag.isDragging ? 'none' : undefined,
+        transition: drag.isDragging ? 'none' : 'transform 200ms ease-out',
         zIndex: drag.isDragging ? 10 : undefined,
       }}
       className={({ isActive }) =>
@@ -102,7 +102,7 @@ function SidebarItem({ item, drag }: { item: (typeof NAV_ITEMS)[number]; drag: N
         WebkitTouchCallout: 'none',
         WebkitUserSelect: 'none',
         transform: drag.isDragging ? `translateY(${drag.dragOffset}px)` : undefined,
-        transition: drag.isDragging ? 'none' : undefined,
+        transition: drag.isDragging ? 'none' : 'transform 200ms ease-out',
         zIndex: drag.isDragging ? 10 : undefined,
       }}
       className={({ isActive }) =>
