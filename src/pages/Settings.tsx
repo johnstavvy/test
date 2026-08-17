@@ -41,7 +41,7 @@ export default function Settings() {
         </div>
         <button
           onClick={resetOrder}
-          className="shrink-0 rounded-full border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-600 transition-transform duration-150 active:scale-95 dark:border-slate-600 dark:text-slate-300"
+          className="shrink-0 rounded-full border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 transition-transform duration-150 active:scale-95 active:bg-red-50 dark:border-red-800 dark:text-red-400 dark:active:bg-red-950"
         >
           Reset
         </button>

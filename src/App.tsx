@@ -10,14 +10,15 @@ import Budget from './pages/Budget'
 import Settings from './pages/Settings'
 import { useNavOrder } from './lib/navOrder'
 import { useDragReorder } from './lib/useDragReorder'
+import { IconChart, IconHome, IconList, IconScan, IconSettings, IconWallet } from './lib/icons'
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Home', icon: '🏠', end: true },
-  { to: '/expenses', label: 'Expenses', icon: '📋', end: false },
-  { to: '/capture', label: 'Scan', icon: '🧾', end: false },
-  { to: '/summary', label: 'Summary', icon: '📊', end: false },
-  { to: '/budget', label: 'Budget', icon: '💰', end: false },
-  { to: '/settings', label: 'Settings', icon: '⚙️', end: false },
+  { to: '/', label: 'Home', icon: IconHome, end: true },
+  { to: '/expenses', label: 'Expenses', icon: IconList, end: false },
+  { to: '/capture', label: 'Scan', icon: IconScan, end: false },
+  { to: '/summary', label: 'Summary', icon: IconChart, end: false },
+  { to: '/budget', label: 'Budget', icon: IconWallet, end: false },
+  { to: '/settings', label: 'Settings', icon: IconSettings, end: false },
 ]
 
 type NavDragProps = {
@@ -56,9 +57,9 @@ function BottomBarItem({ item, drag }: { item: (typeof NAV_ITEMS)[number]; drag:
     >
       {({ isActive }) => (
         <>
-          <span className={`text-xl transition-transform duration-200 ${isActive ? 'scale-110' : 'scale-100'}`}>
-            {item.icon}
-          </span>
+          <item.icon
+            className={`h-6 w-6 transition-transform duration-200 ${isActive ? 'scale-110' : 'scale-100'}`}
+          />
           {item.label}
         </>
       )}
@@ -111,7 +112,7 @@ function SidebarItem({ item, drag }: { item: (typeof NAV_ITEMS)[number]; drag: N
         } ${drag.isDragging ? 'scale-105 shadow-lg' : ''}`
       }
     >
-      <span className="text-lg">{item.icon}</span>
+      <item.icon className="h-5 w-5" />
       {item.label}
     </NavLink>
   )
