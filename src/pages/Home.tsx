@@ -2,27 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Expense } from '../db'
 import { listExpenses } from '../lib/expenses'
+import { currentWeekDays, dateFromIso } from '../lib/week'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
-
-function isoDate(d: Date) {
-  return d.toISOString().slice(0, 10)
-}
-
-function lastSevenDays() {
-  const days: string[] = []
-  const today = new Date()
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i)
-    days.push(isoDate(d))
-  }
-  return days
-}
-
-function dateFromIso(iso: string) {
-  const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d)
-}
 
 function shortLabel(iso: string) {
   return dateFromIso(iso).toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2)
@@ -41,7 +23,7 @@ export default function Home() {
     listExpenses().then(setExpenses)
   }, [])
 
-  const days = useMemo(lastSevenDays, [])
+  const days = useMemo(currentWeekDays, [])
 
   const dailyTotals = useMemo(() => {
     const totals: Record<string, number> = {}
