@@ -25,10 +25,50 @@ export interface Expense {
   createdAt: number
 }
 
+export const BILL_CATEGORIES = [
+  'Mortgage/Rent',
+  'Electricity',
+  'Gas',
+  'Water',
+  'Internet',
+  'Subscription',
+  'Insurance',
+  'Other',
+] as const
+
+export type BillCategory = (typeof BILL_CATEGORIES)[number]
+
+export interface Bill {
+  id: number
+  name: string
+  category: BillCategory
+  amount: number
+  dueDay: number // day of month, 1-31
+  notes: string
+  createdAt: number
+}
+
+export interface Income {
+  id: number
+  source: string
+  amount: number
+  payDay: number // day of month, 1-31
+  notes: string
+  createdAt: number
+}
+
 export const db = new Dexie('expense-tracker') as Dexie & {
   expenses: EntityTable<Expense, 'id'>
+  bills: EntityTable<Bill, 'id'>
+  incomes: EntityTable<Income, 'id'>
 }
 
 db.version(1).stores({
   expenses: '++id, date, category, merchant, createdAt',
+})
+
+db.version(2).stores({
+  expenses: '++id, date, category, merchant, createdAt',
+  bills: '++id, dueDay, category, name, createdAt',
+  incomes: '++id, payDay, source, createdAt',
 })

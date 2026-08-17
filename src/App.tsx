@@ -6,6 +6,7 @@ import Expenses from './pages/Expenses'
 import Capture from './pages/Capture'
 import Summary from './pages/Summary'
 import ExpenseDetail from './pages/ExpenseDetail'
+import Budget from './pages/Budget'
 import Settings from './pages/Settings'
 
 const NAV_ITEMS = [
@@ -13,6 +14,7 @@ const NAV_ITEMS = [
   { to: '/expenses', label: 'Expenses', icon: '📋', end: false },
   { to: '/capture', label: 'Scan', icon: '🧾', end: false },
   { to: '/summary', label: 'Summary', icon: '📊', end: false },
+  { to: '/budget', label: 'Budget', icon: '💰', end: false },
   { to: '/settings', label: 'Settings', icon: '⚙️', end: false },
 ]
 
@@ -109,6 +111,7 @@ export default function App() {
               <Route path="/capture" element={<Capture />} />
               <Route path="/summary" element={<Summary />} />
               <Route path="/expense/:id" element={<ExpenseDetail />} />
+              <Route path="/budget" element={<Budget />} />
               <Route path="/settings" element={<Settings />} />
             </Routes>
           </div>
