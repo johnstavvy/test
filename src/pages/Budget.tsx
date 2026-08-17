@@ -3,6 +3,7 @@ import { BILL_CATEGORIES, type Bill, type BillCategory, type Expense, type Incom
 import { addBill, daysUntilDue, deleteBill, listBills, totalMonthlyBills, updateBill } from '../lib/bills'
 import { addIncome, deleteIncome, listIncomes, totalMonthlyIncome, updateIncome } from '../lib/income'
 import { listExpenses } from '../lib/expenses'
+import { currentMonthKey } from '../lib/week'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -21,15 +22,21 @@ const inputClass =
   'rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100'
 const labelClass = 'flex flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300'
 
-function dueLabel(days: number) {
-  if (days === 0) return 'Due today'
-  if (days === 1) return 'Due tomorrow'
-  return `Due in ${days}d`
+// Formats a day-of-month as "1st", "2nd", "3rd", "4th", ... "11th", "21st", etc.
+function ordinal(n: number): string {
+  const j = n % 10
+  const k = n % 100
+  if (j === 1 && k !== 11) return `${n}st`
+  if (j === 2 && k !== 12) return `${n}nd`
+  if (j === 3 && k !== 13) return `${n}rd`
+  return `${n}th`
 }
 
-function currentMonthKey() {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+function dueLabel(days: number, dueDay: number) {
+  const day = ordinal(dueDay)
+  if (days === 0) return `Due today · the ${day}`
+  if (days === 1) return `Due tomorrow · the ${day}`
+  return `Due the ${day} · in ${days}d`
 }
 
 // ---------- Bills ----------
@@ -221,7 +228,7 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
                         {bill.category}
                       </span>
                       <span className={`text-xs ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}>
-                        {dueLabel(days)}
+                        {dueLabel(days, bill.dueDay)}
                       </span>
                     </div>
                   </div>
@@ -458,7 +465,7 @@ function IncomeSection({
               >
                 <div className="min-w-0">
                   <p className="truncate font-medium text-slate-900 dark:text-slate-100">{income.source}</p>
-                  <span className="text-xs text-slate-400 dark:text-slate-500">Paid on the {income.payDay}th</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500">Paid on the {ordinal(income.payDay)}</span>
                 </div>
                 <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
                   {currency.format(income.amount)}

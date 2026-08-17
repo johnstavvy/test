@@ -1,10 +1,83 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import type { Expense } from '../db'
+import type { Bill, Expense, Income } from '../db'
 import { listExpenses } from '../lib/expenses'
-import { currentWeekDays, dateFromIso, isoDate } from '../lib/week'
+import { listBills, totalMonthlyBills } from '../lib/bills'
+import { listIncomes, totalMonthlyIncome } from '../lib/income'
+import { currentMonthKey, currentWeekDays, dateFromIso, isoDate } from '../lib/week'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+
+function BudgetOverview({ income, outgoing }: { income: number; outgoing: number }) {
+  if (income === 0 && outgoing === 0) {
+    return (
+      <Link
+        to="/budget"
+        className="flex items-center justify-between rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400"
+      >
+        <span>Add bills and income to see your monthly budget overview</span>
+        <span className="ml-3 shrink-0 text-accent">Set up →</span>
+      </Link>
+    )
+  }
+
+  const total = income + outgoing
+  const incomePct = total > 0 ? income / total : 0
+  const net = income - outgoing
+  const r = 30
+  const circumference = 2 * Math.PI * r
+
+  return (
+    <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+      <svg width="72" height="72" viewBox="0 0 72 72" className="-rotate-90 shrink-0">
+        <circle cx="36" cy="36" r={r} fill="none" strokeWidth="10" className="stroke-rose-500" />
+        <circle
+          cx="36"
+          cy="36"
+          r={r}
+          fill="none"
+          strokeWidth="10"
+          strokeLinecap={incomePct > 0 && incomePct < 1 ? 'butt' : 'round'}
+          className="stroke-emerald-500 transition-all duration-300"
+          strokeDasharray={`${circumference * incomePct} ${circumference}`}
+        />
+      </svg>
+
+      <div className="flex flex-1 flex-col gap-1.5">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+          This month's budget
+        </p>
+        <div className="flex items-center justify-between text-sm">
+          <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            Income
+          </span>
+          <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">
+            {currency.format(income)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+            <span className="h-2 w-2 rounded-full bg-rose-500" />
+            Outgoing
+          </span>
+          <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">
+            {currency.format(outgoing)}
+          </span>
+        </div>
+        <div className="mt-0.5 flex items-center justify-between border-t border-slate-100 pt-1.5 text-sm dark:border-slate-700">
+          <span className="text-slate-600 dark:text-slate-300">Net</span>
+          <span
+            className={`font-semibold ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}
+          >
+            {net >= 0 ? '+' : ''}
+            {currency.format(net)}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function shortLabel(iso: string) {
   return dateFromIso(iso).toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2)
@@ -22,14 +95,26 @@ function dayLabel(iso: string, todayIso: string, yesterdayIso: string) {
 
 export default function Home() {
   const [expenses, setExpenses] = useState<Expense[] | null>(null)
+  const [bills, setBills] = useState<Bill[] | null>(null)
+  const [incomes, setIncomes] = useState<Income[] | null>(null)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
-  const [recentOpen, setRecentOpen] = useState(true)
+  const [recentOpen, setRecentOpen] = useState(false)
 
   useEffect(() => {
     listExpenses().then(setExpenses)
+    listBills().then(setBills)
+    listIncomes().then(setIncomes)
   }, [])
 
   const days = useMemo(currentWeekDays, [])
+
+  const monthExpensesTotal = useMemo(() => {
+    const monthKey = currentMonthKey()
+    return (expenses ?? []).filter((e) => e.date.startsWith(monthKey)).reduce((sum, e) => sum + e.total, 0)
+  }, [expenses])
+
+  const monthlyIncomeTotal = totalMonthlyIncome(incomes ?? [])
+  const monthlyOutgoingTotal = totalMonthlyBills(bills ?? []) + monthExpensesTotal
 
   const dailyTotals = useMemo(() => {
     const totals: Record<string, number> = {}
@@ -60,7 +145,12 @@ export default function Home() {
   }, [todayIso])
 
   return (
-    <div className="flex flex-col lg:flex-row lg:items-start lg:gap-6 lg:px-4 lg:pt-6">
+    <div className="flex flex-col lg:gap-6 lg:px-4 lg:pt-6">
+      <div className="px-4 pt-4 lg:px-0 lg:pt-0">
+        <BudgetOverview income={monthlyIncomeTotal} outgoing={monthlyOutgoingTotal} />
+      </div>
+
+      <div className="flex flex-col lg:flex-row lg:items-start lg:gap-6">
       <section
         className="flex flex-col gap-3 px-4 pb-5 pt-6 min-h-[25dvh] lg:min-h-[320px] lg:flex-1 lg:px-0 lg:pb-0 lg:pt-0"
       >
@@ -158,6 +248,7 @@ export default function Home() {
           </div>
         )}
       </section>
+      </div>
     </div>
   )
 }

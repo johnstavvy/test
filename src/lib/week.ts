@@ -22,3 +22,9 @@ export function currentWeekDays(): string[] {
     isoDate(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i)),
   )
 }
+
+// "yyyy-mm" key for the calendar month a date falls in (matches Expense.date's yyyy-mm-dd prefix).
+export function currentMonthKey(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+}
