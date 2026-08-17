@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Expense } from '../db'
 import { listExpenses } from '../lib/expenses'
-import { currentWeekDays, dateFromIso } from '../lib/week'
+import { currentWeekDays, dateFromIso, isoDate } from '../lib/week'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -12,6 +12,12 @@ function shortLabel(iso: string) {
 
 function longLabel(iso: string) {
   return dateFromIso(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
+function dayLabel(iso: string, todayIso: string, yesterdayIso: string) {
+  if (iso === todayIso) return 'Today'
+  if (iso === yesterdayIso) return 'Yesterday'
+  return dateFromIso(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 export default function Home() {
@@ -37,6 +43,21 @@ export default function Home() {
   const weekTotal = days.reduce((sum, day) => sum + dailyTotals[day], 0)
   const maxValue = Math.max(...days.map((d) => dailyTotals[d]), 1)
   const recent = expenses?.slice(0, 5) ?? []
+
+  const recentGroups = useMemo(() => {
+    const map = new Map<string, Expense[]>()
+    for (const e of recent) {
+      if (!map.has(e.date)) map.set(e.date, [])
+      map.get(e.date)!.push(e)
+    }
+    return [...map.entries()]
+  }, [recent])
+
+  const todayIso = useMemo(() => isoDate(new Date()), [])
+  const yesterdayIso = useMemo(() => {
+    const t = dateFromIso(todayIso)
+    return isoDate(new Date(t.getFullYear(), t.getMonth(), t.getDate() - 1))
+  }, [todayIso])
 
   return (
     <div className="flex flex-col lg:flex-row lg:items-start lg:gap-6 lg:px-4 lg:pt-6">
@@ -109,20 +130,24 @@ export default function Home() {
               </p>
             )}
 
-            {recent.map((e) => (
-              <Link
-                key={e.id}
-                to={`/expense/${e.id}`}
-                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-md"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-slate-900 dark:text-slate-100">{e.merchant}</p>
-                  <span className="text-xs text-slate-400 dark:text-slate-500">{e.date}</span>
-                </div>
-                <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
-                  {currency.format(e.total)}
+            {recentGroups.map(([date, items]) => (
+              <div key={date} className="flex flex-col gap-2">
+                <p className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                  {dayLabel(date, todayIso, yesterdayIso)}
                 </p>
-              </Link>
+                {items.map((e) => (
+                  <Link
+                    key={e.id}
+                    to={`/expense/${e.id}`}
+                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-md"
+                  >
+                    <p className="truncate font-medium text-slate-900 dark:text-slate-100">{e.merchant}</p>
+                    <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
+                      {currency.format(e.total)}
+                    </p>
+                  </Link>
+                ))}
+              </div>
             ))}
 
             {expenses !== null && expenses.length > recent.length && (
