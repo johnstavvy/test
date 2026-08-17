@@ -45,12 +45,35 @@ function personOf(entity: { person?: 1 | 2 }): 1 | 2 {
   return entity.person === 2 ? 2 : 1
 }
 
+// Whether an entry repeats every month; missing/legacy rows default to true (recurring is the norm).
+function isRecurring(entity: { recurring?: boolean }): boolean {
+  return entity.recurring !== false
+}
+
+function FrequencyToggle({ recurring, onChange }: { recurring: boolean; onChange: (recurring: boolean) => void }) {
+  return (
+    <div className="flex gap-1 rounded-xl border border-slate-300 bg-white p-1 dark:border-slate-600 dark:bg-slate-800">
+      {([true, false] as const).map((value) => (
+        <button
+          key={String(value)}
+          onClick={() => onChange(value)}
+          className={`flex-1 rounded-lg py-1.5 text-sm font-medium transition-colors ${
+            recurring === value ? 'bg-accent text-white' : 'text-slate-500 dark:text-slate-400'
+          }`}
+        >
+          {value ? 'Recurring monthly' : 'One-time'}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // ---------- Bills ----------
 
 type BillDraft = Omit<Bill, 'id' | 'createdAt'>
 
 function emptyBillDraft(category: BillCategory = 'Other', person: 1 | 2 = 1): BillDraft {
-  return { name: '', category, amount: 0, dueDay: 1, person, paymentSource: '', notes: '' }
+  return { name: '', category, amount: 0, dueDay: 1, person, paymentSource: '', recurring: true, notes: '' }
 }
 
 type BillGroupKey = 'home' | 'subscriptions'
@@ -146,6 +169,11 @@ function BillForm({
         </label>
       )}
 
+      <label className={labelClass}>
+        Frequency
+        <FrequencyToggle recurring={isRecurring(draft)} onChange={(recurring) => set('recurring', recurring)} />
+      </label>
+
       <div className="flex gap-3">
         <label className={`flex-1 ${labelClass}`}>
           Amount ($)
@@ -238,6 +266,11 @@ function BillListItem({ bill, compact, onClick }: { bill: Bill; compact?: boolea
             {currency.format(bill.amount)}
           </span>
         </div>
+        {!isRecurring(bill) && (
+          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-slate-700 dark:text-slate-400">
+            One-time
+          </span>
+        )}
       </button>
     )
   }
@@ -258,6 +291,11 @@ function BillListItem({ bill, compact, onClick }: { bill: Bill; compact?: boolea
           <span className={`text-xs ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}>
             {dueLabel(days, bill.dueDay)}
           </span>
+          {!isRecurring(bill) && (
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500 dark:bg-slate-700 dark:text-slate-400">
+              One-time
+            </span>
+          )}
         </div>
         {bill.paymentSource && (
           <p className="mt-0.5 truncate text-xs text-slate-400 dark:text-slate-500">{bill.paymentSource}</p>
@@ -343,6 +381,7 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
                     dueDay: editingBill.dueDay,
                     person: personOf(editingBill),
                     paymentSource: editingBill.paymentSource,
+                    recurring: isRecurring(editingBill),
                     notes: editingBill.notes,
                   }}
                   names={names}
@@ -458,6 +497,7 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
                         amount: bill.amount,
                         dueDay: bill.dueDay,
                         paymentSource: bill.paymentSource,
+                        recurring: isRecurring(bill),
                         notes: bill.notes,
                       }}
                       names={names}
@@ -483,7 +523,7 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
 type IncomeDraft = Omit<Income, 'id' | 'createdAt'> & { person: 1 | 2 }
 
 function emptyIncomeDraft(person: 1 | 2): IncomeDraft {
-  return { source: '', amount: 0, payDay: 1, person, notes: '' }
+  return { source: '', amount: 0, payDay: 1, person, recurring: true, notes: '' }
 }
 
 function IncomeForm({
@@ -532,6 +572,11 @@ function IncomeForm({
             </button>
           ))}
         </div>
+      </label>
+
+      <label className={labelClass}>
+        Frequency
+        <FrequencyToggle recurring={isRecurring(draft)} onChange={(recurring) => set('recurring', recurring)} />
       </label>
 
       <div className="flex gap-3">
@@ -778,6 +823,7 @@ function IncomeSection({
                         amount: income.amount,
                         payDay: income.payDay,
                         person: personOf(income),
+                        recurring: isRecurring(income),
                         notes: income.notes,
                       }}
                       names={names}
@@ -792,9 +838,16 @@ function IncomeSection({
                     >
                       <div className="min-w-0">
                         <p className="truncate font-medium text-slate-900 dark:text-slate-100">{income.source}</p>
-                        <span className="text-xs text-slate-400 dark:text-slate-500">
-                          Paid on the {ordinal(income.payDay)}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-400 dark:text-slate-500">
+                            Paid on the {ordinal(income.payDay)}
+                          </span>
+                          {!isRecurring(income) && (
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500 dark:bg-slate-700 dark:text-slate-400">
+                              One-time
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
                         {currency.format(income.amount)}

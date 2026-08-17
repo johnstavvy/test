@@ -46,6 +46,7 @@ export interface Bill {
   dueDay: number // day of month, 1-31
   person?: 1 | 2 // which household member this subscription belongs to; unused for non-subscription bills
   paymentSource?: string // e.g. "Chase Checking", "Amex Blue" — which bank/card this is paid from
+  recurring?: boolean // repeats every month; missing/legacy rows default to true (one-time bills are the exception)
   notes: string
   createdAt: number
 }
@@ -56,6 +57,7 @@ export interface Income {
   amount: number
   payDay: number // day of month, 1-31
   person?: 1 | 2 // which household member this income belongs to; missing on legacy rows, treat as 1
+  recurring?: boolean // repeats every month; missing/legacy rows default to true (one-time income is the exception)
   notes: string
   createdAt: number
 }
