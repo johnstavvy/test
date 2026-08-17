@@ -4,7 +4,7 @@ import { addBill, daysUntilDue, deleteBill, listBills, totalMonthlyBills, update
 import { addIncome, deleteIncome, listIncomes, totalMonthlyIncome, updateIncome } from '../lib/income'
 import { listExpenses } from '../lib/expenses'
 import { currentMonthKey } from '../lib/week'
-import { getPeopleNames, setPersonName } from '../lib/people'
+import { usePeopleNames } from '../lib/people'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -40,12 +40,17 @@ function dueLabel(days: number, dueDay: number) {
   return `Due the ${day} · in ${days}d`
 }
 
+// Which of the two household members an entry belongs to; missing/legacy rows default to person 1.
+function personOf(entity: { person?: 1 | 2 }): 1 | 2 {
+  return entity.person === 2 ? 2 : 1
+}
+
 // ---------- Bills ----------
 
 type BillDraft = Omit<Bill, 'id' | 'createdAt'>
 
-function emptyBillDraft(category: BillCategory = 'Other'): BillDraft {
-  return { name: '', category, amount: 0, dueDay: 1, notes: '' }
+function emptyBillDraft(category: BillCategory = 'Other', person: 1 | 2 = 1): BillDraft {
+  return { name: '', category, amount: 0, dueDay: 1, person, paymentSource: '', notes: '' }
 }
 
 type BillGroupKey = 'home' | 'subscriptions'
@@ -78,11 +83,13 @@ const BILL_GROUPS: {
 
 function BillForm({
   initial,
+  names,
   onSave,
   onCancel,
   onDelete,
 }: {
   initial: BillDraft
+  names?: [string, string]
   onSave: (draft: BillDraft) => void
   onCancel: () => void
   onDelete?: () => void
@@ -120,6 +127,25 @@ function BillForm({
         </select>
       </label>
 
+      {draft.category === 'Subscription' && names && (
+        <label className={labelClass}>
+          Person
+          <div className="flex gap-1 rounded-xl border border-slate-300 bg-white p-1 dark:border-slate-600 dark:bg-slate-800">
+            {([1, 2] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => set('person', p)}
+                className={`flex-1 truncate rounded-lg py-1.5 text-sm font-medium transition-colors ${
+                  personOf(draft) === p ? 'bg-accent text-white' : 'text-slate-500 dark:text-slate-400'
+                }`}
+              >
+                {names[p - 1]}
+              </button>
+            ))}
+          </div>
+        </label>
+      )}
+
       <div className="flex gap-3">
         <label className={`flex-1 ${labelClass}`}>
           Amount ($)
@@ -145,6 +171,16 @@ function BillForm({
           />
         </label>
       </div>
+
+      <label className={labelClass}>
+        Bank / Card (optional)
+        <input
+          value={draft.paymentSource ?? ''}
+          onChange={(e) => set('paymentSource', e.target.value)}
+          placeholder="e.g. Chase Checking"
+          className={inputClass}
+        />
+      </label>
 
       <label className={labelClass}>
         Notes (optional)
@@ -178,9 +214,65 @@ function BillForm({
   )
 }
 
+function BillListItem({ bill, compact, onClick }: { bill: Bill; compact?: boolean; onClick: () => void }) {
+  const days = daysUntilDue(bill.dueDay)
+  const soon = days <= 3
+
+  if (compact) {
+    return (
+      <button
+        onClick={onClick}
+        className="flex w-full flex-col items-start gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700"
+      >
+        <p className="w-full truncate text-sm font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
+        {bill.paymentSource && (
+          <p className="w-full truncate text-[10px] text-slate-400 dark:text-slate-500">{bill.paymentSource}</p>
+        )}
+        <div className="flex w-full items-center justify-between gap-1">
+          <span
+            className={`truncate text-[11px] ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}
+          >
+            {dueLabel(days, bill.dueDay)}
+          </span>
+          <span className="shrink-0 text-xs font-semibold text-slate-900 dark:text-slate-100">
+            {currency.format(bill.amount)}
+          </span>
+        </div>
+      </button>
+    )
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-sm"
+    >
+      <div className="min-w-0">
+        <p className="truncate font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
+        <div className="mt-1 flex items-center gap-2">
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${BILL_CATEGORY_COLORS[bill.category] ?? BILL_CATEGORY_COLORS.Other}`}
+          >
+            {bill.category}
+          </span>
+          <span className={`text-xs ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}>
+            {dueLabel(days, bill.dueDay)}
+          </span>
+        </div>
+        {bill.paymentSource && (
+          <p className="mt-0.5 truncate text-xs text-slate-400 dark:text-slate-500">{bill.paymentSource}</p>
+        )}
+      </div>
+      <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">{currency.format(bill.amount)}</p>
+    </button>
+  )
+}
+
 function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) {
   const [editing, setEditing] = useState<number | 'new' | null>(null)
   const [newGroupKey, setNewGroupKey] = useState<BillGroupKey>('home')
+  const [newSubPerson, setNewSubPerson] = useState<1 | 2>(1)
+  const { names, renaming, nameDraft, setNameDraft, startRename, saveRename } = usePeopleNames()
 
   const grouped = useMemo(() => {
     const groups: Record<BillGroupKey, Bill[]> = { home: [], subscriptions: [] }
@@ -221,6 +313,102 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
         const list = grouped[group.key]
         const isAddingHere = editing === 'new' && newGroupKey === group.key
 
+        if (group.key === 'subscriptions') {
+          const editingBill = typeof editing === 'number' ? list.find((b) => b.id === editing) : undefined
+
+          return (
+            <div key={group.key} className="flex flex-col gap-2">
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                {group.label}{' '}
+                <span className="font-normal text-slate-400 dark:text-slate-500">
+                  · {currency.format(totalMonthlyBills(list))}
+                </span>
+              </p>
+
+              {isAddingHere && (
+                <BillForm
+                  initial={emptyBillDraft(group.defaultCategory, newSubPerson)}
+                  names={names}
+                  onSave={handleSave}
+                  onCancel={() => setEditing(null)}
+                />
+              )}
+
+              {editingBill && (
+                <BillForm
+                  initial={{
+                    name: editingBill.name,
+                    category: editingBill.category,
+                    amount: editingBill.amount,
+                    dueDay: editingBill.dueDay,
+                    person: personOf(editingBill),
+                    paymentSource: editingBill.paymentSource,
+                    notes: editingBill.notes,
+                  }}
+                  names={names}
+                  onSave={handleSave}
+                  onCancel={() => setEditing(null)}
+                  onDelete={() => handleDelete(editingBill.id)}
+                />
+              )}
+
+              {list.length === 0 && !isAddingHere && (
+                <div className="flex flex-col items-center gap-2 px-4 py-8 text-center text-slate-500 dark:text-slate-400">
+                  <div className="text-3xl">{group.emptyIcon}</div>
+                  <p className="text-sm">{group.emptyText}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                {([1, 2] as const).map((personNum) => {
+                  const idx = (personNum - 1) as 0 | 1
+                  const personList = list.filter((bill) => personOf(bill) === personNum)
+
+                  return (
+                    <div key={personNum} className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-1">
+                        <PersonHeader
+                          name={names[idx]}
+                          subtotal={totalMonthlyBills(personList)}
+                          renaming={renaming === idx}
+                          onStartRename={() => startRename(idx)}
+                          nameDraft={nameDraft}
+                          onNameDraftChange={setNameDraft}
+                          onSaveRename={saveRename}
+                        />
+                        {editing !== 'new' && (
+                          <button
+                            onClick={() => {
+                              setNewGroupKey('subscriptions')
+                              setNewSubPerson(personNum)
+                              setEditing('new')
+                            }}
+                            className="shrink-0 rounded-full bg-accent px-2 py-1 text-xs font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97]"
+                          >
+                            +
+                          </button>
+                        )}
+                      </div>
+
+                      {personList.length === 0 ? (
+                        <p className="px-1 text-xs text-slate-400 dark:text-slate-500">None yet.</p>
+                      ) : (
+                        <ul className="flex flex-col gap-2">
+                          {personList.map((bill) => (
+                            <li key={bill.id}>
+                              <BillListItem compact bill={bill} onClick={() => setEditing(bill.id)} />
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        }
+
         return (
           <div key={group.key} className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -246,6 +434,7 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
             {isAddingHere && (
               <BillForm
                 initial={emptyBillDraft(group.defaultCategory)}
+                names={names}
                 onSave={handleSave}
                 onCancel={() => setEditing(null)}
               />
@@ -259,52 +448,28 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
             )}
 
             <ul className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:gap-3">
-              {list.map((bill) => {
-                const days = daysUntilDue(bill.dueDay)
-                const soon = days <= 3
-                return (
-                  <li key={bill.id}>
-                    {editing === bill.id ? (
-                      <BillForm
-                        initial={{
-                          name: bill.name,
-                          category: bill.category,
-                          amount: bill.amount,
-                          dueDay: bill.dueDay,
-                          notes: bill.notes,
-                        }}
-                        onSave={handleSave}
-                        onCancel={() => setEditing(null)}
-                        onDelete={() => handleDelete(bill.id)}
-                      />
-                    ) : (
-                      <button
-                        onClick={() => setEditing(bill.id)}
-                        className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-sm"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
-                          <div className="mt-1 flex items-center gap-2">
-                            <span
-                              className={`rounded-full px-2 py-0.5 text-xs font-medium ${BILL_CATEGORY_COLORS[bill.category] ?? BILL_CATEGORY_COLORS.Other}`}
-                            >
-                              {bill.category}
-                            </span>
-                            <span
-                              className={`text-xs ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}
-                            >
-                              {dueLabel(days, bill.dueDay)}
-                            </span>
-                          </div>
-                        </div>
-                        <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
-                          {currency.format(bill.amount)}
-                        </p>
-                      </button>
-                    )}
-                  </li>
-                )
-              })}
+              {list.map((bill) => (
+                <li key={bill.id}>
+                  {editing === bill.id ? (
+                    <BillForm
+                      initial={{
+                        name: bill.name,
+                        category: bill.category,
+                        amount: bill.amount,
+                        dueDay: bill.dueDay,
+                        paymentSource: bill.paymentSource,
+                        notes: bill.notes,
+                      }}
+                      names={names}
+                      onSave={handleSave}
+                      onCancel={() => setEditing(null)}
+                      onDelete={() => handleDelete(bill.id)}
+                    />
+                  ) : (
+                    <BillListItem bill={bill} onClick={() => setEditing(bill.id)} />
+                  )}
+                </li>
+              ))}
             </ul>
           </div>
         )
@@ -319,10 +484,6 @@ type IncomeDraft = Omit<Income, 'id' | 'createdAt'> & { person: 1 | 2 }
 
 function emptyIncomeDraft(person: 1 | 2): IncomeDraft {
   return { source: '', amount: 0, payDay: 1, person, notes: '' }
-}
-
-function personOf(income: Income): 1 | 2 {
-  return income.person === 2 ? 2 : 1
 }
 
 function IncomeForm({
@@ -532,9 +693,7 @@ function IncomeSection({
 }) {
   const [editing, setEditing] = useState<number | 'new' | null>(null)
   const [newPerson, setNewPerson] = useState<1 | 2>(1)
-  const [names, setNames] = useState<[string, string]>(() => getPeopleNames())
-  const [renaming, setRenaming] = useState<0 | 1 | null>(null)
-  const [nameDraft, setNameDraft] = useState('')
+  const { names, renaming, nameDraft, setNameDraft, startRename, saveRename } = usePeopleNames()
 
   const incomeTotal = totalMonthlyIncome(incomes)
   const outgoing = billsTotal + monthExpensesTotal
@@ -545,18 +704,6 @@ function IncomeSection({
     for (const key of [1, 2] as const) groups[key].sort((a, b) => a.payDay - b.payDay)
     return groups
   }, [incomes])
-
-  function startRename(idx: 0 | 1) {
-    setNameDraft(names[idx])
-    setRenaming(idx)
-  }
-
-  function saveRename() {
-    if (renaming === null) return
-    const updated = setPersonName(renaming, nameDraft)
-    setNames(updated)
-    setRenaming(null)
-  }
 
   async function handleSave(draft: IncomeDraft) {
     if (editing === 'new') await addIncome(draft)

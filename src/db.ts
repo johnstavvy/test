@@ -44,6 +44,8 @@ export interface Bill {
   category: BillCategory
   amount: number
   dueDay: number // day of month, 1-31
+  person?: 1 | 2 // which household member this subscription belongs to; unused for non-subscription bills
+  paymentSource?: string // e.g. "Chase Checking", "Amex Blue" — which bank/card this is paid from
   notes: string
   createdAt: number
 }
