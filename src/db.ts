@@ -53,6 +53,7 @@ export interface Income {
   source: string
   amount: number
   payDay: number // day of month, 1-31
+  person?: 1 | 2 // which household member this income belongs to; missing on legacy rows, treat as 1
   notes: string
   createdAt: number
 }

@@ -4,6 +4,7 @@ import { addBill, daysUntilDue, deleteBill, listBills, totalMonthlyBills, update
 import { addIncome, deleteIncome, listIncomes, totalMonthlyIncome, updateIncome } from '../lib/income'
 import { listExpenses } from '../lib/expenses'
 import { currentMonthKey } from '../lib/week'
+import { getPeopleNames, setPersonName } from '../lib/people'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -247,19 +248,25 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
 
 // ---------- Income ----------
 
-type IncomeDraft = Omit<Income, 'id' | 'createdAt'>
+type IncomeDraft = Omit<Income, 'id' | 'createdAt'> & { person: 1 | 2 }
 
-function emptyIncomeDraft(): IncomeDraft {
-  return { source: '', amount: 0, payDay: 1, notes: '' }
+function emptyIncomeDraft(person: 1 | 2): IncomeDraft {
+  return { source: '', amount: 0, payDay: 1, person, notes: '' }
+}
+
+function personOf(income: Income): 1 | 2 {
+  return income.person === 2 ? 2 : 1
 }
 
 function IncomeForm({
   initial,
+  names,
   onSave,
   onCancel,
   onDelete,
 }: {
   initial: IncomeDraft
+  names: [string, string]
   onSave: (draft: IncomeDraft) => void
   onCancel: () => void
   onDelete?: () => void
@@ -280,6 +287,23 @@ function IncomeForm({
           placeholder="e.g. Paycheck"
           className={inputClass}
         />
+      </label>
+
+      <label className={labelClass}>
+        Person
+        <div className="flex gap-1 rounded-xl border border-slate-300 bg-white p-1 dark:border-slate-600 dark:bg-slate-800">
+          {([1, 2] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => set('person', p)}
+              className={`flex-1 truncate rounded-lg py-1.5 text-sm font-medium transition-colors ${
+                draft.person === p ? 'bg-accent text-white' : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {names[p - 1]}
+            </button>
+          ))}
+        </div>
       </label>
 
       <div className="flex gap-3">
@@ -387,6 +411,47 @@ function CashFlowChart({ income, outgoing }: { income: number; outgoing: number 
   )
 }
 
+function PersonHeader({
+  name,
+  subtotal,
+  renaming,
+  onStartRename,
+  nameDraft,
+  onNameDraftChange,
+  onSaveRename,
+}: {
+  name: string
+  subtotal: number
+  renaming: boolean
+  onStartRename: () => void
+  nameDraft: string
+  onNameDraftChange: (v: string) => void
+  onSaveRename: () => void
+}) {
+  if (renaming) {
+    return (
+      <input
+        autoFocus
+        value={nameDraft}
+        onChange={(e) => onNameDraftChange(e.target.value)}
+        onBlur={onSaveRename}
+        onKeyDown={(e) => e.key === 'Enter' && (e.currentTarget as HTMLInputElement).blur()}
+        className="rounded-lg border border-accent/40 bg-white px-2 py-1 text-sm font-semibold text-slate-900 focus:outline-none dark:bg-slate-800 dark:text-slate-100"
+      />
+    )
+  }
+  return (
+    <button
+      onClick={onStartRename}
+      className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300"
+    >
+      {name}
+      <span className="text-xs text-slate-400 dark:text-slate-500">✎</span>
+      <span className="font-normal text-slate-400 dark:text-slate-500">· {currency.format(subtotal)}</span>
+    </button>
+  )
+}
+
 function IncomeSection({
   incomes,
   billsTotal,
@@ -399,10 +464,32 @@ function IncomeSection({
   reload: () => void
 }) {
   const [editing, setEditing] = useState<number | 'new' | null>(null)
+  const [newPerson, setNewPerson] = useState<1 | 2>(1)
+  const [names, setNames] = useState<[string, string]>(() => getPeopleNames())
+  const [renaming, setRenaming] = useState<0 | 1 | null>(null)
+  const [nameDraft, setNameDraft] = useState('')
 
-  const sorted = useMemo(() => [...incomes].sort((a, b) => a.payDay - b.payDay), [incomes])
   const incomeTotal = totalMonthlyIncome(incomes)
   const outgoing = billsTotal + monthExpensesTotal
+
+  const byPerson = useMemo(() => {
+    const groups: Record<1 | 2, Income[]> = { 1: [], 2: [] }
+    for (const income of incomes) groups[personOf(income)].push(income)
+    for (const key of [1, 2] as const) groups[key].sort((a, b) => a.payDay - b.payDay)
+    return groups
+  }, [incomes])
+
+  function startRename(idx: 0 | 1) {
+    setNameDraft(names[idx])
+    setRenaming(idx)
+  }
+
+  function saveRename() {
+    if (renaming === null) return
+    const updated = setPersonName(renaming, nameDraft)
+    setNames(updated)
+    setRenaming(null)
+  }
 
   async function handleSave(draft: IncomeDraft) {
     if (editing === 'new') await addIncome(draft)
@@ -422,59 +509,90 @@ function IncomeSection({
     <div className="flex flex-col gap-4">
       <CashFlowChart income={incomeTotal} outgoing={outgoing} />
 
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Monthly income total</p>
-          <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{currency.format(incomeTotal)}</p>
-        </div>
-        {editing !== 'new' && (
-          <button
-            onClick={() => setEditing('new')}
-            className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97]"
-          >
-            + Add income
-          </button>
-        )}
-      </div>
+      {([1, 2] as const).map((personNum) => {
+        const idx = (personNum - 1) as 0 | 1
+        const list = byPerson[personNum]
+        const isAddingHere = editing === 'new' && newPerson === personNum
 
-      {editing === 'new' && (
-        <IncomeForm initial={emptyIncomeDraft()} onSave={handleSave} onCancel={() => setEditing(null)} />
-      )}
+        return (
+          <div key={personNum} className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <PersonHeader
+                name={names[idx]}
+                subtotal={totalMonthlyIncome(list)}
+                renaming={renaming === idx}
+                onStartRename={() => startRename(idx)}
+                nameDraft={nameDraft}
+                onNameDraftChange={setNameDraft}
+                onSaveRename={saveRename}
+              />
+              {editing !== 'new' && (
+                <button
+                  onClick={() => {
+                    setNewPerson(personNum)
+                    setEditing('new')
+                  }}
+                  className="rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97]"
+                >
+                  + Add income
+                </button>
+              )}
+            </div>
 
-      {sorted.length === 0 && editing !== 'new' && (
-        <div className="flex flex-col items-center gap-3 px-4 py-12 text-center text-slate-500 dark:text-slate-400">
-          <div className="text-4xl">💵</div>
-          <p>No income sources yet. Add your paycheck or other monthly income.</p>
-        </div>
-      )}
-
-      <ul className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:gap-3">
-        {sorted.map((income) => (
-          <li key={income.id}>
-            {editing === income.id ? (
+            {isAddingHere && (
               <IncomeForm
-                initial={{ source: income.source, amount: income.amount, payDay: income.payDay, notes: income.notes }}
+                initial={emptyIncomeDraft(personNum)}
+                names={names}
                 onSave={handleSave}
                 onCancel={() => setEditing(null)}
-                onDelete={() => handleDelete(income.id)}
               />
-            ) : (
-              <button
-                onClick={() => setEditing(income.id)}
-                className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-sm"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-slate-900 dark:text-slate-100">{income.source}</p>
-                  <span className="text-xs text-slate-400 dark:text-slate-500">Paid on the {ordinal(income.payDay)}</span>
-                </div>
-                <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
-                  {currency.format(income.amount)}
-                </p>
-              </button>
             )}
-          </li>
-        ))}
-      </ul>
+
+            {list.length === 0 && !isAddingHere && (
+              <p className="px-1 py-3 text-center text-sm text-slate-400 dark:text-slate-500">
+                No income sources yet.
+              </p>
+            )}
+
+            <ul className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:gap-3">
+              {list.map((income) => (
+                <li key={income.id}>
+                  {editing === income.id ? (
+                    <IncomeForm
+                      initial={{
+                        source: income.source,
+                        amount: income.amount,
+                        payDay: income.payDay,
+                        person: personOf(income),
+                        notes: income.notes,
+                      }}
+                      names={names}
+                      onSave={handleSave}
+                      onCancel={() => setEditing(null)}
+                      onDelete={() => handleDelete(income.id)}
+                    />
+                  ) : (
+                    <button
+                      onClick={() => setEditing(income.id)}
+                      className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-sm"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-slate-900 dark:text-slate-100">{income.source}</p>
+                        <span className="text-xs text-slate-400 dark:text-slate-500">
+                          Paid on the {ordinal(income.payDay)}
+                        </span>
+                      </div>
+                      <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
+                        {currency.format(income.amount)}
+                      </p>
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      })}
     </div>
   )
 }
