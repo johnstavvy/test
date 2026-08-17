@@ -44,9 +44,37 @@ function dueLabel(days: number, dueDay: number) {
 
 type BillDraft = Omit<Bill, 'id' | 'createdAt'>
 
-function emptyBillDraft(): BillDraft {
-  return { name: '', category: 'Other', amount: 0, dueDay: 1, notes: '' }
+function emptyBillDraft(category: BillCategory = 'Other'): BillDraft {
+  return { name: '', category, amount: 0, dueDay: 1, notes: '' }
 }
+
+type BillGroupKey = 'home' | 'subscriptions'
+
+const BILL_GROUPS: {
+  key: BillGroupKey
+  label: string
+  match: (category: BillCategory) => boolean
+  defaultCategory: BillCategory
+  emptyIcon: string
+  emptyText: string
+}[] = [
+  {
+    key: 'home',
+    label: 'Home Payments',
+    match: (category) => category !== 'Subscription',
+    defaultCategory: 'Mortgage/Rent',
+    emptyIcon: '🏠',
+    emptyText: 'No household bills yet. Add your mortgage, utilities, or insurance.',
+  },
+  {
+    key: 'subscriptions',
+    label: 'Subscriptions',
+    match: (category) => category === 'Subscription',
+    defaultCategory: 'Subscription',
+    emptyIcon: '📺',
+    emptyText: 'No subscriptions yet. Add streaming, software, or memberships.',
+  },
+]
 
 function BillForm({
   initial,
@@ -152,11 +180,19 @@ function BillForm({
 
 function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) {
   const [editing, setEditing] = useState<number | 'new' | null>(null)
+  const [newGroupKey, setNewGroupKey] = useState<BillGroupKey>('home')
 
-  const sorted = useMemo(
-    () => [...bills].sort((a, b) => daysUntilDue(a.dueDay) - daysUntilDue(b.dueDay)),
-    [bills],
-  )
+  const grouped = useMemo(() => {
+    const groups: Record<BillGroupKey, Bill[]> = { home: [], subscriptions: [] }
+    for (const bill of bills) {
+      const group = BILL_GROUPS.find((g) => g.match(bill.category)) ?? BILL_GROUPS[0]
+      groups[group.key].push(bill)
+    }
+    for (const key of Object.keys(groups) as BillGroupKey[]) {
+      groups[key].sort((a, b) => daysUntilDue(a.dueDay) - daysUntilDue(b.dueDay))
+    }
+    return groups
+  }, [bills])
 
   async function handleSave(draft: BillDraft) {
     if (editing === 'new') await addBill(draft)
@@ -173,75 +209,106 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Monthly bills total</p>
-          <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-            {currency.format(totalMonthlyBills(bills))}
-          </p>
-        </div>
-        {editing !== 'new' && (
-          <button
-            onClick={() => setEditing('new')}
-            className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97]"
-          >
-            + Add bill
-          </button>
-        )}
+    <div className="flex flex-col gap-4">
+      <div>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Monthly bills total</p>
+        <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+          {currency.format(totalMonthlyBills(bills))}
+        </p>
       </div>
 
-      {editing === 'new' && (
-        <BillForm initial={emptyBillDraft()} onSave={handleSave} onCancel={() => setEditing(null)} />
-      )}
+      {BILL_GROUPS.map((group) => {
+        const list = grouped[group.key]
+        const isAddingHere = editing === 'new' && newGroupKey === group.key
 
-      {sorted.length === 0 && editing !== 'new' && (
-        <div className="flex flex-col items-center gap-3 px-4 py-12 text-center text-slate-500 dark:text-slate-400">
-          <div className="text-4xl">🏠</div>
-          <p>No household bills yet. Add your mortgage, utilities, or subscriptions.</p>
-        </div>
-      )}
-
-      <ul className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:gap-3">
-        {sorted.map((bill) => {
-          const days = daysUntilDue(bill.dueDay)
-          const soon = days <= 3
-          return (
-            <li key={bill.id}>
-              {editing === bill.id ? (
-                <BillForm
-                  initial={{ name: bill.name, category: bill.category, amount: bill.amount, dueDay: bill.dueDay, notes: bill.notes }}
-                  onSave={handleSave}
-                  onCancel={() => setEditing(null)}
-                  onDelete={() => handleDelete(bill.id)}
-                />
-              ) : (
+        return (
+          <div key={group.key} className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                {group.label}{' '}
+                <span className="font-normal text-slate-400 dark:text-slate-500">
+                  · {currency.format(totalMonthlyBills(list))}
+                </span>
+              </p>
+              {editing !== 'new' && (
                 <button
-                  onClick={() => setEditing(bill.id)}
-                  className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-sm"
+                  onClick={() => {
+                    setNewGroupKey(group.key)
+                    setEditing('new')
+                  }}
+                  className="rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97]"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${BILL_CATEGORY_COLORS[bill.category] ?? BILL_CATEGORY_COLORS.Other}`}
-                      >
-                        {bill.category}
-                      </span>
-                      <span className={`text-xs ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}>
-                        {dueLabel(days, bill.dueDay)}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
-                    {currency.format(bill.amount)}
-                  </p>
+                  + Add
                 </button>
               )}
-            </li>
-          )
-        })}
-      </ul>
+            </div>
+
+            {isAddingHere && (
+              <BillForm
+                initial={emptyBillDraft(group.defaultCategory)}
+                onSave={handleSave}
+                onCancel={() => setEditing(null)}
+              />
+            )}
+
+            {list.length === 0 && !isAddingHere && (
+              <div className="flex flex-col items-center gap-2 px-4 py-8 text-center text-slate-500 dark:text-slate-400">
+                <div className="text-3xl">{group.emptyIcon}</div>
+                <p className="text-sm">{group.emptyText}</p>
+              </div>
+            )}
+
+            <ul className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:gap-3">
+              {list.map((bill) => {
+                const days = daysUntilDue(bill.dueDay)
+                const soon = days <= 3
+                return (
+                  <li key={bill.id}>
+                    {editing === bill.id ? (
+                      <BillForm
+                        initial={{
+                          name: bill.name,
+                          category: bill.category,
+                          amount: bill.amount,
+                          dueDay: bill.dueDay,
+                          notes: bill.notes,
+                        }}
+                        onSave={handleSave}
+                        onCancel={() => setEditing(null)}
+                        onDelete={() => handleDelete(bill.id)}
+                      />
+                    ) : (
+                      <button
+                        onClick={() => setEditing(bill.id)}
+                        className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-sm"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-xs font-medium ${BILL_CATEGORY_COLORS[bill.category] ?? BILL_CATEGORY_COLORS.Other}`}
+                            >
+                              {bill.category}
+                            </span>
+                            <span
+                              className={`text-xs ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}
+                            >
+                              {dueLabel(days, bill.dueDay)}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
+                          {currency.format(bill.amount)}
+                        </p>
+                      </button>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        )
+      })}
     </div>
   )
 }
