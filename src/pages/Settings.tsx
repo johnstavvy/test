@@ -1,7 +1,9 @@
 import { useTheme } from '../lib/theme'
+import { useNavOrder } from '../lib/navOrder'
 
 export default function Settings() {
   const { theme, toggleTheme } = useTheme()
+  const { resetOrder } = useNavOrder()
 
   return (
     <div className="flex flex-col gap-4 px-4 py-6 lg:mx-auto lg:max-w-xl">
@@ -27,6 +29,21 @@ export default function Settings() {
               theme === 'dark' ? 'translate-x-5' : 'translate-x-0'
             }`}
           />
+        </button>
+      </div>
+
+      <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div>
+          <p className="font-medium text-slate-900 dark:text-slate-100">Menu order</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Press and drag any tab in the menu to reorder it.
+          </p>
+        </div>
+        <button
+          onClick={resetOrder}
+          className="shrink-0 rounded-full border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-600 transition-transform duration-150 active:scale-95 dark:border-slate-600 dark:text-slate-300"
+        >
+          Reset
         </button>
       </div>
     </div>

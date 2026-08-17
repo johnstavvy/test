@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import logo from './assets/logo.png'
 import Home from './pages/Home'
@@ -8,6 +8,8 @@ import Summary from './pages/Summary'
 import ExpenseDetail from './pages/ExpenseDetail'
 import Budget from './pages/Budget'
 import Settings from './pages/Settings'
+import { useNavOrder } from './lib/navOrder'
+import { useDragReorder } from './lib/useDragReorder'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Home', icon: '🏠', end: true },
@@ -18,15 +20,34 @@ const NAV_ITEMS = [
   { to: '/settings', label: 'Settings', icon: '⚙️', end: false },
 ]
 
-function BottomBarItem({ item }: { item: (typeof NAV_ITEMS)[number] }) {
+type NavDragProps = {
+  orderIndex: number
+  isDragging: boolean
+  dragOffset: number
+  onPointerDown: (e: ReactPointerEvent) => void
+  onClickCapture: (e: ReactMouseEvent) => void
+  registerRef: (el: HTMLElement | null) => void
+}
+
+function BottomBarItem({ item, drag }: { item: (typeof NAV_ITEMS)[number]; drag: NavDragProps }) {
   return (
     <NavLink
+      ref={(el) => drag.registerRef(el)}
       to={item.to}
       end={item.end}
+      onPointerDown={drag.onPointerDown}
+      onClickCapture={drag.onClickCapture}
+      style={{
+        order: drag.orderIndex,
+        touchAction: 'none',
+        transform: drag.isDragging ? `translateX(${drag.dragOffset}px)` : undefined,
+        transition: drag.isDragging ? 'none' : undefined,
+        zIndex: drag.isDragging ? 10 : undefined,
+      }}
       className={({ isActive }) =>
-        `flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
+        `flex flex-1 select-none flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
           isActive ? 'text-accent' : 'text-slate-400 dark:text-slate-500'
-        }`
+        } ${drag.isDragging ? 'scale-110 opacity-80' : ''}`
       }
     >
       {({ isActive }) => (
@@ -61,15 +82,25 @@ function useScrolledPastTop(threshold = 16) {
   return scrolled
 }
 
-function SidebarItem({ item }: { item: (typeof NAV_ITEMS)[number] }) {
+function SidebarItem({ item, drag }: { item: (typeof NAV_ITEMS)[number]; drag: NavDragProps }) {
   return (
     <NavLink
+      ref={(el) => drag.registerRef(el)}
       to={item.to}
       end={item.end}
+      onPointerDown={drag.onPointerDown}
+      onClickCapture={drag.onClickCapture}
+      style={{
+        order: drag.orderIndex,
+        touchAction: 'none',
+        transform: drag.isDragging ? `translateY(${drag.dragOffset}px)` : undefined,
+        transition: drag.isDragging ? 'none' : undefined,
+        zIndex: drag.isDragging ? 10 : undefined,
+      }}
       className={({ isActive }) =>
-        `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors lg:hover:bg-slate-100 dark:lg:hover:bg-slate-800 ${
+        `flex select-none items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors lg:hover:bg-slate-100 dark:lg:hover:bg-slate-800 ${
           isActive ? 'bg-accent/10 text-accent dark:bg-accent/15' : 'text-slate-500 dark:text-slate-400'
-        }`
+        } ${drag.isDragging ? 'scale-105 shadow-lg' : ''}`
       }
     >
       <span className="text-lg">{item.icon}</span>
@@ -81,6 +112,22 @@ function SidebarItem({ item }: { item: (typeof NAV_ITEMS)[number] }) {
 export default function App() {
   const location = useLocation()
   const scrolled = useScrolledPastTop()
+  const { order, setOrder } = useNavOrder()
+
+  const bottomDrag = useDragReorder(order, setOrder, 'x')
+  const sidebarDrag = useDragReorder(order, setOrder, 'y')
+
+  function dragPropsFor(source: typeof bottomDrag, to: string): NavDragProps {
+    const isDragging = source.dragState?.key === to
+    return {
+      orderIndex: order.indexOf(to),
+      isDragging,
+      dragOffset: isDragging ? source.dragState!.offset : 0,
+      onPointerDown: (e) => source.handlePointerDown(to, e),
+      onClickCapture: source.handleClickCapture,
+      registerRef: (el) => source.registerItemRef(to, el),
+    }
+  }
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-50 dark:bg-slate-900 lg:mx-0 lg:max-w-none lg:flex-row">
@@ -90,7 +137,7 @@ export default function App() {
           <span className="font-semibold text-slate-900 dark:text-slate-100">Pecunia</span>
         </div>
         {NAV_ITEMS.map((item) => (
-          <SidebarItem key={item.to} item={item} />
+          <SidebarItem key={item.to} item={item} drag={dragPropsFor(sidebarDrag, item.to)} />
         ))}
       </aside>
 
@@ -125,7 +172,7 @@ export default function App() {
         >
           <div className="flex justify-around px-1 py-1.5">
             {NAV_ITEMS.map((item) => (
-              <BottomBarItem key={item.to} item={item} />
+              <BottomBarItem key={item.to} item={item} drag={dragPropsFor(bottomDrag, item.to)} />
             ))}
           </div>
         </nav>

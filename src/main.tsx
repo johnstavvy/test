@@ -4,13 +4,16 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import { ThemeProvider } from './lib/theme.tsx'
+import { NavOrderProvider } from './lib/navOrder.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
-      <BrowserRouter basename="/test">
-        <App />
-      </BrowserRouter>
+      <NavOrderProvider>
+        <BrowserRouter basename="/test">
+          <App />
+        </BrowserRouter>
+      </NavOrderProvider>
     </ThemeProvider>
   </StrictMode>,
 )
