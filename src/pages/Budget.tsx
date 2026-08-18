@@ -814,101 +814,101 @@ function IncomeSection({
     })
   }
 
+  const editingIncome = typeof editing === 'number' ? incomes.find((i) => i.id === editing) : undefined
+  const isAdding = editing === 'new'
+
   return (
     <div className="flex flex-col gap-4">
       <CashFlowChart income={incomeTotal} outgoing={outgoing} />
 
-      {([1, 2] as const).map((personNum) => {
-        const idx = (personNum - 1) as 0 | 1
-        const list = byPerson[personNum]
-        const visibleList = list.filter((income) => matches(income.source) || income.id === editing)
-        const isAddingHere = editing === 'new' && newPerson === personNum
+      {isAdding && (
+        <IncomeForm
+          initial={emptyIncomeDraft(newPerson)}
+          names={names}
+          onSave={handleSave}
+          onCancel={() => setEditing(null)}
+        />
+      )}
 
-        return (
-          <div key={personNum} className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <PersonHeader
-                name={names[idx]}
-                subtotal={totalMonthlyIncome(list)}
-                renaming={renaming === idx}
-                onStartRename={() => startRename(idx)}
-                nameDraft={nameDraft}
-                onNameDraftChange={setNameDraft}
-                onSaveRename={saveRename}
-              />
-              {editing !== 'new' && (
-                <button
-                  onClick={() => {
-                    setNewPerson(personNum)
-                    setEditing('new')
-                  }}
-                  className="rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97]"
-                >
-                  + Add income
-                </button>
+      {editingIncome && (
+        <IncomeForm
+          initial={{
+            source: editingIncome.source,
+            amount: editingIncome.amount,
+            payDay: editingIncome.payDay,
+            person: personOf(editingIncome),
+            recurring: isRecurring(editingIncome),
+            notes: editingIncome.notes,
+          }}
+          names={names}
+          onSave={handleSave}
+          onCancel={() => setEditing(null)}
+          onDelete={() => handleDelete(editingIncome)}
+        />
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        {([1, 2] as const).map((personNum) => {
+          const idx = (personNum - 1) as 0 | 1
+          const list = byPerson[personNum]
+          const visibleList = list.filter((income) => matches(income.source) || income.id === editing)
+
+          return (
+            <div key={personNum} className="flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-1">
+                <PersonHeader
+                  name={names[idx]}
+                  subtotal={totalMonthlyIncome(list)}
+                  renaming={renaming === idx}
+                  onStartRename={() => startRename(idx)}
+                  nameDraft={nameDraft}
+                  onNameDraftChange={setNameDraft}
+                  onSaveRename={saveRename}
+                />
+                {editing !== 'new' && (
+                  <button
+                    onClick={() => {
+                      setNewPerson(personNum)
+                      setEditing('new')
+                    }}
+                    className="shrink-0 rounded-full bg-accent px-2 py-1 text-xs font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97]"
+                  >
+                    +
+                  </button>
+                )}
+              </div>
+
+              {visibleList.length === 0 ? (
+                <p className="px-1 text-xs text-slate-400 dark:text-slate-500">
+                  {list.length === 0 ? 'None yet.' : 'No matches.'}
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {visibleList.map((income) => (
+                    <li key={income.id}>
+                      <button
+                        onClick={() => setEditing(income.id)}
+                        className="flex w-full flex-col items-start gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700"
+                      >
+                        <p className="w-full truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+                          {income.source}
+                        </p>
+                        <FrequencyBadge recurring={isRecurring(income)} compact />
+                        <span className="truncate text-[11px] text-slate-400 dark:text-slate-500">
+                          Paid the {ordinal(income.payDay)}
+                        </span>
+                        <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                          {currency.format(income.amount)}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
-
-            {isAddingHere && (
-              <IncomeForm
-                initial={emptyIncomeDraft(personNum)}
-                names={names}
-                onSave={handleSave}
-                onCancel={() => setEditing(null)}
-              />
-            )}
-
-            {list.length === 0 && !isAddingHere && (
-              <p className="px-1 py-3 text-center text-sm text-slate-400 dark:text-slate-500">
-                No income sources yet.
-              </p>
-            )}
-
-            {list.length > 0 && visibleList.length === 0 && (
-              <p className="px-1 py-3 text-center text-sm text-slate-400 dark:text-slate-500">No matches.</p>
-            )}
-
-            <ul className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:gap-3">
-              {visibleList.map((income) => (
-                <li key={income.id}>
-                  {editing === income.id ? (
-                    <IncomeForm
-                      initial={{
-                        source: income.source,
-                        amount: income.amount,
-                        payDay: income.payDay,
-                        person: personOf(income),
-                        recurring: isRecurring(income),
-                        notes: income.notes,
-                      }}
-                      names={names}
-                      onSave={handleSave}
-                      onCancel={() => setEditing(null)}
-                      onDelete={() => handleDelete(income)}
-                    />
-                  ) : (
-                    <button
-                      onClick={() => setEditing(income.id)}
-                      className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-sm"
-                    >
-                      <div className="flex min-w-0 flex-col items-start gap-1">
-                        <p className="truncate font-medium text-slate-900 dark:text-slate-100">{income.source}</p>
-                        <FrequencyBadge recurring={isRecurring(income)} />
-                        <span className="text-xs text-slate-400 dark:text-slate-500">
-                          Paid on the {ordinal(income.payDay)}
-                        </span>
-                      </div>
-                      <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
-                        {currency.format(income.amount)}
-                      </p>
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }
