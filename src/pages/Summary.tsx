@@ -10,7 +10,7 @@ import { useGrowIn } from '../lib/useGrowIn'
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
 function MonthlyBudget({ income, bills, spent }: { income: number; bills: number; spent: number }) {
-  const { grown, settled } = useGrowIn(700)
+  const { grown, settled } = useGrowIn(1000)
 
   if (income === 0 && bills === 0) {
     return (
@@ -45,7 +45,7 @@ function MonthlyBudget({ income, bills, spent }: { income: number; bills: number
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
         <div
-          className={`h-full rounded-full transition-all ${settled ? 'duration-300' : 'duration-700 ease-out'} ${over ? 'bg-rose-500' : 'bg-accent'}`}
+          className={`h-full rounded-full transition-all ${settled ? 'duration-300' : 'duration-1000 ease-out'} ${over ? 'bg-rose-500' : 'bg-accent'}`}
           style={{ width: `${widthPct}%` }}
         />
       </div>
@@ -67,7 +67,7 @@ function monthLabel(key: string) {
 
 function BarList({ rows }: { rows: { label: string; total: number }[] }) {
   const max = Math.max(...rows.map((r) => r.total), 1)
-  const { grown, settled } = useGrowIn(700)
+  const { grown, settled } = useGrowIn(1000)
   return (
     <ul className="flex flex-col gap-3">
       {rows.map((r) => (
@@ -78,7 +78,7 @@ function BarList({ rows }: { rows: { label: string; total: number }[] }) {
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
             <div
-              className={`h-full rounded-full bg-accent transition-all ${settled ? 'duration-300' : 'duration-700 ease-out'}`}
+              className={`h-full rounded-full bg-accent transition-all ${settled ? 'duration-300' : 'duration-1000 ease-out'}`}
               style={{ width: `${grown ? Math.max((r.total / max) * 100, 4) : 0}%` }}
             />
           </div>

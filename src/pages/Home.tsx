@@ -25,7 +25,7 @@ function SpendingTrend({
   todayDayOfMonth: number
 }) {
   const gradientId = useId()
-  const { grown, settled } = useGrowIn(700)
+  const { grown, settled } = useGrowIn(1000)
 
   if (income === 0 && outgoing === 0) {
     return (
@@ -40,7 +40,7 @@ function SpendingTrend({
   }
 
   const net = income - outgoing
-  const durationClass = settled ? 'duration-300' : 'duration-700 ease-out'
+  const durationClass = settled ? 'duration-300' : 'duration-1000 ease-out'
   const areaGradientId = `${gradientId}-area`
   const lineGradientId = `${gradientId}-line`
   const revealClipId = `${gradientId}-reveal`
@@ -76,12 +76,12 @@ function SpendingTrend({
       <svg viewBox={`0 0 ${width} ${height}`} className="h-20 w-full" preserveAspectRatio="none">
         <defs>
           <linearGradient id={areaGradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#33ccb3" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#33ccb3" stopOpacity="0" />
+            <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#f43f5e" stopOpacity="0" />
           </linearGradient>
           <linearGradient id={lineGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#34d399" />
-            <stop offset="100%" stopColor="#026e5c" />
+            <stop offset="0%" stopColor="#fb7185" />
+            <stop offset="100%" stopColor="#e11d48" />
           </linearGradient>
           <clipPath id={revealClipId}>
             <rect
@@ -116,7 +116,7 @@ function SpendingTrend({
       </svg>
       {lastPoint && (
         <div
-          className={`absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#026e5c] shadow-sm transition-opacity dark:border-slate-800 ${durationClass} ${
+          className={`absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#e11d48] shadow-sm transition-opacity dark:border-slate-800 ${durationClass} ${
             grown ? 'opacity-100' : 'opacity-0'
           }`}
           style={{ left: `${(lastPoint[0] / width) * 100}%`, top: `${(lastPoint[1] / height) * 100}%` }}
@@ -168,7 +168,7 @@ export default function Home() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [recentOpen, setRecentOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const barGrow = useGrowIn(700)
+  const barGrow = useGrowIn(1000)
 
   useEffect(() => {
     listExpenses().then(setExpenses)
@@ -333,7 +333,7 @@ export default function Home() {
               >
                 <div
                   className={`w-full max-w-[24px] rounded-t bg-accent transition-all lg:max-w-[32px] ${
-                    barGrow.settled ? 'duration-200' : 'duration-700 ease-out'
+                    barGrow.settled ? 'duration-200' : 'duration-1000 ease-out'
                   } ${
                     isSelected
                       ? 'ring-2 ring-accent ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900'

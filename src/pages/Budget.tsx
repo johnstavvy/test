@@ -685,8 +685,8 @@ function IncomeForm({
 function CashFlowChart({ income, outgoing }: { income: number; outgoing: number }) {
   const max = Math.max(income, outgoing, 1)
   const net = income - outgoing
-  const { grown, settled } = useGrowIn(700)
-  const durationClass = settled ? 'duration-300' : 'duration-700 ease-out'
+  const { grown, settled } = useGrowIn(1000)
+  const durationClass = settled ? 'duration-300' : 'duration-1000 ease-out'
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
