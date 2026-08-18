@@ -49,7 +49,7 @@ function BottomBarItem({ item, drag }: { item: (typeof NAV_ITEMS)[number]; drag:
         zIndex: drag.isDragging ? 10 : undefined,
       }}
       className={({ isActive }) =>
-        `flex flex-1 select-none flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
+        `flex min-w-0 flex-1 select-none flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
           isActive ? 'text-accent' : 'text-slate-400 dark:text-slate-500'
         } ${drag.isDragging ? 'scale-110 opacity-80' : ''}`
       }
@@ -59,7 +59,7 @@ function BottomBarItem({ item, drag }: { item: (typeof NAV_ITEMS)[number]; drag:
           <item.icon
             className={`h-6 w-6 transition-transform duration-200 ${isActive ? 'scale-110' : 'scale-100'}`}
           />
-          {item.label}
+          <span className="w-full truncate text-center">{item.label}</span>
         </>
       )}
     </NavLink>
