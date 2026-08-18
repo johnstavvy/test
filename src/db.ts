@@ -63,10 +63,20 @@ export interface Income {
   createdAt: number
 }
 
+export type TrashType = 'expense' | 'bill' | 'income'
+
+export interface TrashEntry {
+  id: number
+  type: TrashType
+  deletedAt: number
+  data: Expense | Bill | Income
+}
+
 export const db = new Dexie('expense-tracker') as Dexie & {
   expenses: EntityTable<Expense, 'id'>
   bills: EntityTable<Bill, 'id'>
   incomes: EntityTable<Income, 'id'>
+  trash: EntityTable<TrashEntry, 'id'>
 }
 
 db.version(1).stores({
@@ -77,4 +87,11 @@ db.version(2).stores({
   expenses: '++id, date, category, merchant, createdAt',
   bills: '++id, dueDay, category, name, createdAt',
   incomes: '++id, payDay, source, createdAt',
+})
+
+db.version(3).stores({
+  expenses: '++id, date, category, merchant, createdAt',
+  bills: '++id, dueDay, category, name, createdAt',
+  incomes: '++id, payDay, source, createdAt',
+  trash: '++id, type, deletedAt',
 })

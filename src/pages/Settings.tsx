@@ -1,11 +1,91 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTheme } from '../lib/theme'
 import { useNavOrder } from '../lib/navOrder'
 import { downloadBackup, exportData, parseBackupFile, restoreBackup } from '../lib/backup'
 import { useCustomRules } from '../lib/customCategories'
 import { useConfirm } from '../lib/confirm'
 import { useToast } from '../lib/toast'
-import { CATEGORIES, type Category } from '../db'
+import { useSwipeToDelete } from '../lib/useSwipeToDelete'
+import { clearTrash, listTrash, removeFromTrash, restoreFromTrash } from '../lib/trash'
+import { CATEGORIES, type Bill, type Category, type Expense, type Income, type TrashEntry } from '../db'
+
+const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+
+function timeAgo(ms: number): string {
+  const diff = Date.now() - ms
+  const minutes = Math.floor(diff / 60_000)
+  if (minutes < 1) return 'Just now'
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
+}
+
+function describeTrashEntry(entry: TrashEntry): { title: string; amount: string } {
+  if (entry.type === 'expense') {
+    const e = entry.data as Expense
+    return { title: e.merchant, amount: currency.format(e.total) }
+  }
+  if (entry.type === 'bill') {
+    const b = entry.data as Bill
+    return { title: b.name, amount: `${currency.format(b.amount)}/mo` }
+  }
+  const i = entry.data as Income
+  return { title: i.source, amount: `${currency.format(i.amount)}/mo` }
+}
+
+function TrashRow({
+  entry,
+  onRestore,
+  onDeleteForever,
+}: {
+  entry: TrashEntry
+  onRestore: (entry: TrashEntry) => void
+  onDeleteForever: (entry: TrashEntry) => void
+}) {
+  const swipe = useSwipeToDelete(160)
+  const { title, amount } = describeTrashEntry(entry)
+  const kindLabel = entry.type === 'expense' ? 'Expense' : entry.type === 'bill' ? 'Bill' : 'Income'
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl">
+      <div className="absolute inset-y-0 right-0 flex">
+        <button
+          onClick={() => onRestore(entry)}
+          aria-label={`Restore ${title}`}
+          className="flex w-20 items-center justify-center bg-accent text-sm font-semibold text-white"
+        >
+          Restore
+        </button>
+        <button
+          onClick={() => onDeleteForever(entry)}
+          aria-label={`Delete ${title} forever`}
+          className="flex w-20 items-center justify-center rounded-2xl bg-red-500 text-sm font-semibold text-white"
+        >
+          Delete
+        </button>
+      </div>
+      <div
+        {...swipe.handlers}
+        style={{
+          transform: `translateX(${swipe.offset}px)`,
+          transition: swipe.isDragging ? 'none' : 'transform 200ms ease-out',
+          touchAction: 'pan-y',
+        }}
+        className="relative flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+      >
+        <div className="min-w-0">
+          <p className="truncate font-medium text-slate-900 dark:text-slate-100">{title}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">
+            {kindLabel} · Deleted {timeAgo(entry.deletedAt)}
+          </p>
+        </div>
+        <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">{amount}</p>
+      </div>
+    </div>
+  )
+}
 
 export default function Settings() {
   const { theme, toggleTheme } = useTheme()
@@ -17,6 +97,37 @@ export default function Settings() {
   const [ruleCategory, setRuleCategory] = useState<Category>(CATEGORIES[0])
   const confirmDialog = useConfirm()
   const toast = useToast()
+  const [trash, setTrash] = useState<TrashEntry[]>([])
+
+  function reloadTrash() {
+    listTrash().then(setTrash)
+  }
+
+  useEffect(reloadTrash, [])
+
+  async function handleRestore(entry: TrashEntry) {
+    const { title } = describeTrashEntry(entry)
+    await restoreFromTrash(entry)
+    reloadTrash()
+    toast.show({ message: `Restored "${title}"` })
+  }
+
+  async function handleDeleteForever(entry: TrashEntry) {
+    await removeFromTrash(entry.id)
+    reloadTrash()
+  }
+
+  async function handleClearTrash() {
+    const proceed = await confirmDialog({
+      title: 'Empty trash?',
+      message: `Permanently delete ${trash.length} item${trash.length === 1 ? '' : 's'}. This can't be undone.`,
+      confirmLabel: 'Empty trash',
+      destructive: true,
+    })
+    if (!proceed) return
+    await clearTrash()
+    reloadTrash()
+  }
 
   async function handleExport() {
     const data = await exportData()
@@ -192,6 +303,37 @@ export default function Settings() {
                 >
                   ✕
                 </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-medium text-slate-900 dark:text-slate-100">Deleted items</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Swipe an item to restore it or delete it forever.
+            </p>
+          </div>
+          {trash.length > 0 && (
+            <button
+              onClick={handleClearTrash}
+              className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400"
+            >
+              Delete all
+            </button>
+          )}
+        </div>
+
+        {trash.length === 0 ? (
+          <p className="text-sm text-slate-400 dark:text-slate-500">Nothing deleted recently.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {trash.map((entry) => (
+              <li key={entry.id}>
+                <TrashRow entry={entry} onRestore={handleRestore} onDeleteForever={handleDeleteForever} />
               </li>
             ))}
           </ul>

@@ -1,12 +1,14 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react'
 
-const OPEN_OFFSET = -84
 const DRAG_THRESHOLD = 8
 
-// Horizontal swipe-left-to-reveal-delete for a single list row. Local to
+// Horizontal swipe-left-to-reveal-action(s) for a single list row. Local to
 // each row (not a shared registry like useDragReorder) since only one row's
 // gesture is ever in flight and rows don't need to coordinate positions.
-export function useSwipeToDelete() {
+// `revealWidth` is the total px of action buttons behind the row (default
+// fits one action button; pass e.g. 160 for two side-by-side).
+export function useSwipeToDelete(revealWidth = 84) {
+  const OPEN_OFFSET = -revealWidth
   const [offset, setOffset] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const startXRef = useRef(0)

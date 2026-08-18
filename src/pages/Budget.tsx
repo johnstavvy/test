@@ -7,6 +7,7 @@ import { currentMonthKey } from '../lib/week'
 import { usePeopleNames } from '../lib/people'
 import { isRecurring } from '../lib/recurring'
 import { useToast } from '../lib/toast'
+import { addToTrash, removeFromTrash } from '../lib/trash'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -350,6 +351,7 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
 
   async function handleDelete(bill: Bill) {
     await deleteBill(bill.id)
+    const trashId = await addToTrash('bill', bill)
     setEditing(null)
     reload()
     toast.show({
@@ -357,6 +359,7 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
       actionLabel: 'Undo',
       onAction: async () => {
         await db.bills.put(bill)
+        await removeFromTrash(trashId)
         reload()
       },
     })
@@ -797,6 +800,7 @@ function IncomeSection({
 
   async function handleDelete(income: Income) {
     await deleteIncome(income.id)
+    const trashId = await addToTrash('income', income)
     setEditing(null)
     reload()
     toast.show({
@@ -804,6 +808,7 @@ function IncomeSection({
       actionLabel: 'Undo',
       onAction: async () => {
         await db.incomes.put(income)
+        await removeFromTrash(trashId)
         reload()
       },
     })

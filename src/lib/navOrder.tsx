@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 
 const STORAGE_KEY = 'expense-tracker-nav-order'
 
-export const DEFAULT_NAV_ORDER = ['/', '/expenses', '/capture', '/summary', '/budget', '/settings']
+export const DEFAULT_NAV_ORDER = ['/', '/expenses', '/summary', '/budget', '/settings']
 
 function readStoredOrder(): string[] {
   try {

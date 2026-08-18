@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { CATEGORIES, db, type Category, type Expense } from '../db'
 import { deleteExpense, updateExpense } from '../lib/expenses'
 import { useToast } from '../lib/toast'
+import { addToTrash, removeFromTrash } from '../lib/trash'
 
 export default function ExpenseDetail() {
   const { id } = useParams()
@@ -40,11 +41,15 @@ export default function ExpenseDetail() {
     if (!expense) return
     const toDelete = expense
     await deleteExpense(toDelete.id)
+    const trashId = await addToTrash('expense', toDelete)
     navigate('/')
     toast.show({
       message: `Deleted "${toDelete.merchant}"`,
       actionLabel: 'Undo',
-      onAction: () => db.expenses.put(toDelete),
+      onAction: async () => {
+        await db.expenses.put(toDelete)
+        await removeFromTrash(trashId)
+      },
     })
   }
 

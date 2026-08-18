@@ -6,6 +6,7 @@ import { dateFromIso, isoDate, mondayOf } from '../lib/week'
 import { IconScan } from '../lib/icons'
 import { useSwipeToDelete } from '../lib/useSwipeToDelete'
 import { useToast } from '../lib/toast'
+import { addToTrash, removeFromTrash } from '../lib/trash'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -137,12 +138,14 @@ export default function Expenses() {
 
   async function handleDelete(expense: Expense) {
     await deleteExpense(expense.id)
+    const trashId = await addToTrash('expense', expense)
     setExpenses((prev) => prev?.filter((e) => e.id !== expense.id) ?? prev)
     toast.show({
       message: `Deleted "${expense.merchant}"`,
       actionLabel: 'Undo',
       onAction: async () => {
         await db.expenses.put(expense)
+        await removeFromTrash(trashId)
         listExpenses().then(setExpenses)
       },
     })

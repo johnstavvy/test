@@ -10,12 +10,11 @@ import Budget from './pages/Budget'
 import Settings from './pages/Settings'
 import { useNavOrder } from './lib/navOrder'
 import { useDragReorder } from './lib/useDragReorder'
-import { IconChart, IconHome, IconList, IconScan, IconSettings, IconWallet } from './lib/icons'
+import { IconChart, IconHome, IconList, IconSettings, IconWallet } from './lib/icons'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Home', icon: IconHome, end: true },
   { to: '/expenses', label: 'Expenses', icon: IconList, end: false },
-  { to: '/capture', label: 'Scan', icon: IconScan, end: false },
   { to: '/summary', label: 'Summary', icon: IconChart, end: false },
   { to: '/budget', label: 'Budget', icon: IconWallet, end: false },
   { to: '/settings', label: 'Settings', icon: IconSettings, end: false },
