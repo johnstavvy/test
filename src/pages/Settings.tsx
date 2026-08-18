@@ -44,24 +44,24 @@ function TrashRow({
   onRestore: (entry: TrashEntry) => void
   onDeleteForever: (entry: TrashEntry) => void
 }) {
-  const swipe = useSwipeToDelete(160)
+  const swipe = useSwipeToDelete(172)
   const { title, amount } = describeTrashEntry(entry)
   const kindLabel = entry.type === 'expense' ? 'Expense' : entry.type === 'bill' ? 'Bill' : 'Income'
 
   return (
     <div className="relative overflow-hidden rounded-2xl">
-      <div className="absolute inset-y-0 right-0 flex">
+      <div className="absolute inset-y-1.5 right-1.5 flex gap-1.5">
         <button
           onClick={() => onRestore(entry)}
           aria-label={`Restore ${title}`}
-          className="flex w-20 items-center justify-center bg-accent text-sm font-semibold text-white"
+          className="flex w-20 items-center justify-center rounded-xl bg-accent text-sm font-semibold text-white transition-opacity active:opacity-80"
         >
           Restore
         </button>
         <button
           onClick={() => onDeleteForever(entry)}
           aria-label={`Delete ${title} forever`}
-          className="flex w-20 items-center justify-center rounded-2xl bg-red-500 text-sm font-semibold text-white"
+          className="flex w-20 items-center justify-center rounded-xl bg-red-500 text-sm font-semibold text-white transition-opacity active:opacity-80"
         >
           Delete
         </button>

@@ -30,14 +30,14 @@ function weekRangeLabel(mondayIso: string) {
 }
 
 function ExpenseRow({ expense, onDelete }: { expense: Expense; onDelete: (e: Expense) => void }) {
-  const swipe = useSwipeToDelete()
+  const swipe = useSwipeToDelete(86)
 
   return (
     <div className="relative overflow-hidden rounded-2xl">
       <button
         onClick={() => onDelete(expense)}
         aria-label={`Delete ${expense.merchant}`}
-        className="absolute inset-y-0 right-0 flex w-20 items-center justify-center rounded-2xl bg-red-500 text-sm font-semibold text-white"
+        className="absolute inset-y-1.5 right-1.5 flex w-20 items-center justify-center rounded-xl bg-red-500 text-sm font-semibold text-white transition-opacity active:opacity-80"
       >
         Delete
       </button>
