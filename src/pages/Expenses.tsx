@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { CATEGORIES, db, type Expense } from '../db'
 import { deleteExpense, listExpenses } from '../lib/expenses'
@@ -186,14 +187,17 @@ export default function Expenses() {
 
   return (
     <>
-      <Link
-        to="/capture"
-        aria-label="Add expense"
-        className="fixed left-1/2 top-[calc(env(safe-area-inset-top)+3.75rem)] z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition-transform duration-150 active:scale-95 lg:top-8"
-      >
-        <IconScan className="h-4 w-4" />
-        Add Expense
-      </Link>
+      {createPortal(
+        <Link
+          to="/capture"
+          aria-label="Add expense"
+          className="fixed left-1/2 top-[calc(env(safe-area-inset-top)+3.75rem)] z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition-transform duration-150 active:scale-95 lg:top-8"
+        >
+          <IconScan className="h-4 w-4" />
+          Add Expense
+        </Link>,
+        document.body,
+      )}
 
       <div className="flex flex-col gap-4 px-4 py-6">
         <div>
