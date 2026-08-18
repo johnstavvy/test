@@ -19,7 +19,7 @@ function todayIso() {
   return isoDate(new Date())
 }
 
-export default function Capture() {
+export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
   const navigate = useNavigate()
   const toast = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -170,7 +170,11 @@ export default function Capture() {
       rawText,
       imageDataUrl,
     })
-    navigate('/expenses')
+    if (onSaved) {
+      onSaved()
+    } else {
+      navigate('/expenses')
+    }
     toast.show({ message: `Saved "${savedMerchant}" — ${currency.format(savedTotal)} · ${category}` })
   }
 

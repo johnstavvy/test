@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { CATEGORIES, db, type Expense } from '../db'
@@ -8,6 +8,8 @@ import { IconScan } from '../lib/icons'
 import { useSwipeToDelete } from '../lib/useSwipeToDelete'
 import { useToast } from '../lib/toast'
 import { addToTrash, removeFromTrash } from '../lib/trash'
+import { ExpandingSheet } from '../lib/expandingSheet'
+import Capture from './Capture'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -131,11 +133,24 @@ export default function Expenses() {
   const [overrides, setOverrides] = useState<Record<string, boolean>>({})
   const [query, setQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [originRect, setOriginRect] = useState<DOMRect | null>(null)
+  const pillRef = useRef<HTMLButtonElement>(null)
   const toast = useToast()
 
   useEffect(() => {
     listExpenses().then(setExpenses)
   }, [])
+
+  function openAddExpense() {
+    setOriginRect(pillRef.current?.getBoundingClientRect() ?? null)
+    setSheetOpen(true)
+  }
+
+  function handleExpenseSaved() {
+    listExpenses().then(setExpenses)
+    setSheetOpen(false)
+  }
 
   async function handleDelete(expense: Expense) {
     await deleteExpense(expense.id)
@@ -188,16 +203,21 @@ export default function Expenses() {
   return (
     <>
       {createPortal(
-        <Link
-          to="/capture"
+        <button
+          ref={pillRef}
+          onClick={openAddExpense}
           aria-label="Add expense"
           className="fixed left-1/2 top-[calc(env(safe-area-inset-top)+3.75rem)] z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition-transform duration-150 active:scale-95 lg:top-8"
         >
           <IconScan className="h-4 w-4" />
           Add Expense
-        </Link>,
+        </button>,
         document.body,
       )}
+
+      <ExpandingSheet open={sheetOpen} originRect={originRect} onClose={() => setSheetOpen(false)} title="Add Expense">
+        <Capture onSaved={handleExpenseSaved} />
+      </ExpandingSheet>
 
       <div className="flex flex-col gap-4 px-4 py-6">
         <div>
