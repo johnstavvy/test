@@ -10,7 +10,7 @@ export default function ExpenseDetail() {
   const navigate = useNavigate()
   const toast = useToast()
   const [expense, setExpense] = useState<Expense | null>(null)
-  const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -23,18 +23,22 @@ export default function ExpenseDetail() {
 
   function set<K extends keyof Expense>(key: K, value: Expense[K]) {
     setExpense((prev) => (prev ? { ...prev, [key]: value } : prev))
-    setSaved(false)
   }
 
   async function handleSave() {
     if (!expense) return
+    // Blur before navigating away so iOS Safari doesn't stay zoomed on the
+    // now-unmounted input.
+    ;(document.activeElement as HTMLElement | null)?.blur()
+    setSaving(true)
     await updateExpense(expense.id, {
       merchant: expense.merchant,
       date: expense.date,
       total: expense.total,
       category: expense.category,
     })
-    setSaved(true)
+    navigate('/expenses')
+    toast.show({ message: `Saved "${expense.merchant}"` })
   }
 
   async function handleDelete() {
@@ -128,9 +132,10 @@ export default function ExpenseDetail() {
         </button>
         <button
           onClick={handleSave}
-          className="flex-1 rounded-full bg-accent px-4 py-3.5 font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97] active:opacity-90"
+          disabled={saving}
+          className="flex-1 rounded-full bg-accent px-4 py-3.5 font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97] active:opacity-90 disabled:opacity-60 disabled:active:scale-100"
         >
-          {saved ? 'Saved ✓' : 'Save Changes'}
+          {saving ? 'Saving…' : 'Save Changes'}
         </button>
       </div>
     </div>
