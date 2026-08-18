@@ -188,10 +188,11 @@ export default function Expenses() {
     <>
       <Link
         to="/capture"
-        aria-label="Scan a receipt"
-        className="fixed right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-lg shadow-slate-900/20 transition-transform duration-150 active:scale-90 bottom-[calc(env(safe-area-inset-bottom)+6rem)] lg:bottom-8"
+        aria-label="Add expense"
+        className="fixed left-1/2 top-[calc(env(safe-area-inset-top)+3.75rem)] z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition-transform duration-150 active:scale-95 lg:top-8"
       >
-        <IconScan className="h-6 w-6" />
+        <IconScan className="h-4 w-4" />
+        Add Expense
       </Link>
 
       <div className="flex flex-col gap-4 px-4 py-6">
