@@ -1,4 +1,5 @@
 import type { Category } from '../db'
+import { getCustomRules } from './customCategories'
 
 const KEYWORD_MAP: Array<[Category, RegExp]> = [
   ['Groceries', /grocery|market|supermarket|whole foods|trader joe|safeway|kroger|aldi|costco/i],
@@ -12,6 +13,10 @@ const KEYWORD_MAP: Array<[Category, RegExp]> = [
 ]
 
 export function guessCategory(text: string): Category {
+  const lower = text.toLowerCase()
+  for (const rule of getCustomRules()) {
+    if (lower.includes(rule.keyword.toLowerCase())) return rule.category
+  }
   for (const [category, pattern] of KEYWORD_MAP) {
     if (pattern.test(text)) return category
   }

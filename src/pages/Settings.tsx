@@ -1,9 +1,53 @@
+import { useRef, useState } from 'react'
 import { useTheme } from '../lib/theme'
 import { useNavOrder } from '../lib/navOrder'
+import { downloadBackup, exportData, parseBackupFile, restoreBackup } from '../lib/backup'
+import { useCustomRules } from '../lib/customCategories'
+import { CATEGORIES, type Category } from '../db'
 
 export default function Settings() {
   const { theme, toggleTheme } = useTheme()
   const { resetOrder } = useNavOrder()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [importStatus, setImportStatus] = useState<string | null>(null)
+  const { rules, add, remove } = useCustomRules()
+  const [ruleKeyword, setRuleKeyword] = useState('')
+  const [ruleCategory, setRuleCategory] = useState<Category>(CATEGORIES[0])
+
+  async function handleExport() {
+    const data = await exportData()
+    downloadBackup(data)
+  }
+
+  function handleImportClick() {
+    setImportStatus(null)
+    fileInputRef.current?.click()
+  }
+
+  async function handleFileChosen(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      const text = await file.text()
+      const data = parseBackupFile(text)
+      const summary = `${data.expenses.length} expenses, ${data.bills.length} bills, ${data.incomes.length} income sources`
+      if (!confirm(`Import backup from ${data.exportedAt.slice(0, 10)}?\n\nThis replaces everything currently on this device with ${summary}. This can't be undone.`)) {
+        return
+      }
+      await restoreBackup(data)
+      setImportStatus('Import complete — reloading…')
+      setTimeout(() => window.location.reload(), 600)
+    } catch (err) {
+      setImportStatus(err instanceof Error ? err.message : 'Import failed.')
+    }
+  }
+
+  function handleAddRule() {
+    if (!ruleKeyword.trim()) return
+    add(ruleKeyword, ruleCategory)
+    setRuleKeyword('')
+  }
 
   return (
     <div className="flex flex-col gap-4 px-4 py-6 lg:mx-auto lg:max-w-xl">
@@ -45,6 +89,96 @@ export default function Settings() {
         >
           Reset
         </button>
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div>
+          <p className="font-medium text-slate-900 dark:text-slate-100">Backup &amp; restore</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            All data lives only on this device. Export a backup file periodically, or before switching phones.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={handleExport}
+            className="flex-1 rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97] active:opacity-90"
+          >
+            Export data
+          </button>
+          <button
+            onClick={handleImportClick}
+            className="flex-1 rounded-full border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:active:bg-slate-700"
+          >
+            Import data
+          </button>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json"
+          onChange={handleFileChosen}
+          className="hidden"
+        />
+        {importStatus && <p className="text-sm text-slate-500 dark:text-slate-400">{importStatus}</p>}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div>
+          <p className="font-medium text-slate-900 dark:text-slate-100">Custom category rules</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Teach the scanner a merchant name so future receipts land in the right category automatically.
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <input
+            value={ruleKeyword}
+            onChange={(e) => setRuleKeyword(e.target.value)}
+            placeholder="e.g. Joe's Diner"
+            className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          />
+          <select
+            value={ruleCategory}
+            onChange={(e) => setRuleCategory(e.target.value as Category)}
+            className="shrink-0 rounded-xl border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          >
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={handleAddRule}
+            className="shrink-0 rounded-full bg-accent px-3 py-2 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-95 active:opacity-90"
+          >
+            Add
+          </button>
+        </div>
+
+        {rules.length === 0 ? (
+          <p className="text-sm text-slate-400 dark:text-slate-500">No custom rules yet.</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {rules.map((r) => (
+              <li
+                key={r.keyword}
+                className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-slate-700/50"
+              >
+                <span className="min-w-0 truncate text-slate-700 dark:text-slate-200">
+                  <span className="font-medium">{r.keyword}</span> → {r.category}
+                </span>
+                <button
+                  onClick={() => remove(r.keyword)}
+                  className="shrink-0 pl-3 text-red-600 dark:text-red-400"
+                  aria-label={`Remove rule for ${r.keyword}`}
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   )

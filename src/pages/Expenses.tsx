@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import type { Expense } from '../db'
+import { CATEGORIES, type Expense } from '../db'
 import { listExpenses } from '../lib/expenses'
 import { dateFromIso, isoDate, mondayOf } from '../lib/week'
+import { IconScan } from '../lib/icons'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -95,25 +96,39 @@ function WeekGroup({
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[] | null>(null)
   const [overrides, setOverrides] = useState<Record<string, boolean>>({})
+  const [query, setQuery] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState<string>('All')
 
   useEffect(() => {
     listExpenses().then(setExpenses)
   }, [])
 
-  const total = expenses?.reduce((sum, e) => sum + e.total, 0) ?? 0
+  const isFiltering = query.trim() !== '' || categoryFilter !== 'All'
+
+  const filtered = useMemo(() => {
+    if (!expenses) return null
+    const q = query.trim().toLowerCase()
+    return expenses.filter((e) => {
+      if (categoryFilter !== 'All' && e.category !== categoryFilter) return false
+      if (q && !e.merchant.toLowerCase().includes(q)) return false
+      return true
+    })
+  }, [expenses, query, categoryFilter])
+
+  const total = filtered?.reduce((sum, e) => sum + e.total, 0) ?? 0
 
   // Expenses already arrive sorted by date descending, so each group's
   // items stay chronological (newest first) with no extra sort needed.
   const weekGroups = useMemo(() => {
-    if (!expenses) return []
+    if (!filtered) return []
     const map = new Map<string, Expense[]>()
-    for (const e of expenses) {
+    for (const e of filtered) {
       const key = mondayOf(e.date)
       if (!map.has(key)) map.set(key, [])
       map.get(key)!.push(e)
     }
     return [...map.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1))
-  }, [expenses])
+  }, [filtered])
 
   const currentWeekKey = mondayOf(isoDate(new Date()))
   const currentMonday = dateFromIso(currentWeekKey)
@@ -122,37 +137,78 @@ export default function Expenses() {
   )
 
   return (
-    <div className="flex flex-col gap-4 px-4 py-6">
-      <div>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Total tracked</p>
-        <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">{currency.format(total)}</h1>
-      </div>
+    <>
+      <Link
+        to="/capture"
+        aria-label="Scan a receipt"
+        className="fixed right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-lg shadow-slate-900/20 transition-transform duration-150 active:scale-90 lg:bottom-8"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 6rem)' }}
+      >
+        <IconScan className="h-6 w-6" />
+      </Link>
 
-      {expenses === null && <p className="text-slate-500 dark:text-slate-400">Loading…</p>}
-
-      {expenses !== null && expenses.length === 0 && (
-        <div className="mt-10 flex flex-col items-center gap-3 text-center text-slate-500 dark:text-slate-400">
-          <div className="text-4xl">🧾</div>
-          <p>No expenses yet. Tap "Scan" below to add your first receipt.</p>
+      <div className="flex flex-col gap-4 px-4 py-6">
+        <div>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{isFiltering ? 'Matching' : 'Total tracked'}</p>
+          <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">{currency.format(total)}</h1>
         </div>
-      )}
 
-      <div className="flex flex-col gap-3">
-        {weekGroups.map(([weekKey, items], index) => {
-          const label =
-            weekKey === currentWeekKey ? 'This week' : weekKey === lastWeekKey ? 'Last week' : weekRangeLabel(weekKey)
-          const isOpen = overrides[weekKey] ?? index === 0
-          return (
-            <WeekGroup
-              key={weekKey}
-              items={items}
-              label={label}
-              isOpen={isOpen}
-              onToggle={() => setOverrides((prev) => ({ ...prev, [weekKey]: !isOpen }))}
+        {expenses !== null && expenses.length > 0 && (
+          <div className="flex gap-2">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search merchant…"
+              className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
             />
-          )
-        })}
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="shrink-0 rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-sm text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            >
+              <option value="All">All categories</option>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {expenses === null && <p className="text-slate-500 dark:text-slate-400">Loading…</p>}
+
+        {expenses !== null && expenses.length === 0 && (
+          <div className="mt-10 flex flex-col items-center gap-3 text-center text-slate-500 dark:text-slate-400">
+            <div className="text-4xl">🧾</div>
+            <p>No expenses yet. Tap the scan button to add your first receipt.</p>
+          </div>
+        )}
+
+        {expenses !== null && expenses.length > 0 && filtered !== null && filtered.length === 0 && (
+          <div className="mt-10 flex flex-col items-center gap-3 text-center text-slate-500 dark:text-slate-400">
+            <div className="text-4xl">🔍</div>
+            <p>No expenses match your search.</p>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-3">
+          {weekGroups.map(([weekKey, items], index) => {
+            const label =
+              weekKey === currentWeekKey ? 'This week' : weekKey === lastWeekKey ? 'Last week' : weekRangeLabel(weekKey)
+            const isOpen = isFiltering ? true : (overrides[weekKey] ?? index === 0)
+            return (
+              <WeekGroup
+                key={weekKey}
+                items={items}
+                label={label}
+                isOpen={isOpen}
+                onToggle={() => setOverrides((prev) => ({ ...prev, [weekKey]: !isOpen }))}
+              />
+            )
+          })}
+        </div>
       </div>
-    </div>
+    </>
   )
 }
