@@ -44,7 +44,7 @@ function TrashRow({
   onRestore: (entry: TrashEntry) => void
   onDeleteForever: (entry: TrashEntry) => void
 }) {
-  const swipe = useSwipeToDelete(172)
+  const swipe = useSwipeToDelete(184)
   const { title, amount } = describeTrashEntry(entry)
   const kindLabel = entry.type === 'expense' ? 'Expense' : entry.type === 'bill' ? 'Bill' : 'Income'
 
@@ -204,7 +204,7 @@ export default function Settings() {
         </button>
       </div>
 
-      <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+      <div className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <div>
           <p className="font-medium text-slate-900 dark:text-slate-100">Menu order</p>
           <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -213,7 +213,7 @@ export default function Settings() {
         </div>
         <button
           onClick={resetOrder}
-          className="shrink-0 rounded-full border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 transition-transform duration-150 active:scale-95 active:bg-red-50 dark:border-red-800 dark:text-red-400 dark:active:bg-red-950"
+          className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400"
         >
           Reset
         </button>

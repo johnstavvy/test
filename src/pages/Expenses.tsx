@@ -30,7 +30,7 @@ function weekRangeLabel(mondayIso: string) {
 }
 
 function ExpenseRow({ expense, onDelete }: { expense: Expense; onDelete: (e: Expense) => void }) {
-  const swipe = useSwipeToDelete(86)
+  const swipe = useSwipeToDelete(98)
 
   return (
     <div className="relative overflow-hidden rounded-2xl">
