@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { CATEGORIES, db, type Expense } from '../db'
 import { deleteExpense, listExpenses } from '../lib/expenses'
@@ -202,24 +201,23 @@ export default function Expenses() {
 
   return (
     <>
-      {createPortal(
-        <button
-          ref={pillRef}
-          onClick={openAddExpense}
-          aria-label="Add expense"
-          className="fixed left-1/2 top-[calc(env(safe-area-inset-top)+3.75rem)] z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition-transform duration-150 active:scale-95 lg:top-8"
-        >
-          <IconScan className="h-4 w-4" />
-          Add Expense
-        </button>,
-        document.body,
-      )}
-
       <ExpandingSheet open={sheetOpen} originRect={originRect} onClose={() => setSheetOpen(false)} title="Add Expense">
         <Capture onSaved={handleExpenseSaved} />
       </ExpandingSheet>
 
       <div className="flex flex-col gap-4 px-4 py-6">
+        <div className="sticky top-[calc(env(safe-area-inset-top)+3.75rem)] z-30 -mx-4 flex justify-center bg-slate-50/90 px-4 py-2 backdrop-blur-lg dark:bg-slate-900/90 lg:static lg:mx-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
+          <button
+            ref={pillRef}
+            onClick={openAddExpense}
+            aria-label="Add expense"
+            className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition-transform duration-150 active:scale-95"
+          >
+            <IconScan className="h-4 w-4" />
+            Add Expense
+          </button>
+        </div>
+
         <div>
           <p className="text-sm text-slate-500 dark:text-slate-400">{isFiltering ? 'Matching' : 'Total tracked'}</p>
           <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">{currency.format(total)}</h1>
