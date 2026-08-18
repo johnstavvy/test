@@ -8,14 +8,22 @@ import { currentMonthKey, currentWeekDays, dateFromIso, isoDate } from '../lib/w
 import { useGrowIn } from '../lib/useGrowIn'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
-const compactCurrency = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  notation: 'compact',
-  maximumFractionDigits: 1,
-})
 
-function BudgetOverview({ income, outgoing }: { income: number; outgoing: number }) {
+function SpendingTrend({
+  income,
+  outgoing,
+  discretionary,
+  cumulativeSpend,
+  daysInMonth,
+  todayDayOfMonth,
+}: {
+  income: number
+  outgoing: number
+  discretionary: number
+  cumulativeSpend: number[]
+  daysInMonth: number
+  todayDayOfMonth: number
+}) {
   const gradientId = useId()
   const { grown, settled } = useGrowIn(700)
 
@@ -31,89 +39,109 @@ function BudgetOverview({ income, outgoing }: { income: number; outgoing: number
     )
   }
 
-  const total = income + outgoing
-  const incomePct = total > 0 ? income / total : 0
   const net = income - outgoing
-  const r = 34
-  const circumference = 2 * Math.PI * r
-  const dashLength = (grown ? incomePct : 0) * circumference
   const durationClass = settled ? 'duration-300' : 'duration-700 ease-out'
-  const incomeGradientId = `${gradientId}-income`
-  const outgoingGradientId = `${gradientId}-outgoing`
+  const areaGradientId = `${gradientId}-area`
+  const lineGradientId = `${gradientId}-line`
+  const revealClipId = `${gradientId}-reveal`
+
+  const width = 280
+  const height = 84
+  const spentSoFar = cumulativeSpend[todayDayOfMonth - 1] ?? 0
+  const maxY = Math.max(discretionary, spentSoFar, 1) * 1.15
+  const xAt = (day: number) => (daysInMonth > 1 ? ((day - 1) / (daysInMonth - 1)) * width : 0)
+  const yAt = (value: number) => height - (value / maxY) * height
+
+  const points = cumulativeSpend.slice(0, todayDayOfMonth).map((value, i) => [xAt(i + 1), yAt(value)])
+  const hasLine = points.length >= 2
+  const linePath = hasLine ? points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]},${p[1]}`).join(' ') : ''
+  const areaPath = hasLine
+    ? `M${points[0][0]},${height} ${points.map((p) => `L${p[0]},${p[1]}`).join(' ')} L${points[points.length - 1][0]},${height} Z`
+    : ''
+  const budgetY = yAt(discretionary)
+  const lastPoint = points[points.length - 1]
 
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-      <div className="relative shrink-0" style={{ width: 88, height: 88 }}>
-        <svg width="88" height="88" viewBox="0 0 88 88" className="-rotate-90">
-          <defs>
-            <linearGradient id={incomeGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#34d399" />
-              <stop offset="100%" stopColor="#059669" />
-            </linearGradient>
-            <linearGradient id={outgoingGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#fb7185" />
-              <stop offset="100%" stopColor="#e11d48" />
-            </linearGradient>
-          </defs>
-          <circle cx="44" cy="44" r={r} fill="none" strokeWidth="12" stroke={`url(#${outgoingGradientId})`} />
-          <circle
-            cx="44"
-            cy="44"
-            r={r}
-            fill="none"
-            strokeWidth="12"
-            strokeLinecap={incomePct > 0 && incomePct < 1 ? 'butt' : 'round'}
-            stroke={`url(#${incomeGradientId})`}
-            className={`transition-all ${durationClass}`}
-            strokeDasharray={`${dashLength} ${circumference}`}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-          <span
-            className={`text-sm font-bold tabular-nums transition-opacity ${durationClass} ${grown ? 'opacity-100' : 'opacity-0'} ${
-              net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-            }`}
-          >
-            {net >= 0 ? '+' : '−'}
-            {compactCurrency.format(Math.abs(net))}
-          </span>
-          <span className="text-[9px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-            Net
-          </span>
-        </div>
+    <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+      <div className="flex items-baseline justify-between">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+          Spending this month
+        </p>
+        <p className="text-xs text-slate-400 dark:text-slate-500">
+          Day {todayDayOfMonth} of {daysInMonth}
+        </p>
       </div>
 
-      <div className="flex flex-1 flex-col gap-1.5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-          This month's budget
-        </p>
-        <div className="flex items-center justify-between text-sm">
-          <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            Income
-          </span>
-          <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">
-            {currency.format(income)}
-          </span>
-        </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-            <span className="h-2 w-2 rounded-full bg-rose-500" />
-            Outgoing
-          </span>
-          <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">
-            {currency.format(outgoing)}
-          </span>
-        </div>
-        <div className="mt-0.5 flex items-center justify-between border-t border-slate-100 pt-1.5 text-sm dark:border-slate-700">
-          <span className="text-slate-600 dark:text-slate-300">Net</span>
-          <span
-            className={`font-semibold ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}
-          >
-            {net >= 0 ? '+' : ''}
-            {currency.format(net)}
-          </span>
-        </div>
+      <div className="relative h-20 w-full">
+      <svg viewBox={`0 0 ${width} ${height}`} className="h-20 w-full" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id={areaGradientId} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#33ccb3" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#33ccb3" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id={lineGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#34d399" />
+            <stop offset="100%" stopColor="#026e5c" />
+          </linearGradient>
+          <clipPath id={revealClipId}>
+            <rect
+              x="0"
+              y="0"
+              height={height}
+              width={grown ? width : 0}
+              className={`transition-all ${durationClass}`}
+            />
+          </clipPath>
+        </defs>
+
+        {discretionary > 0 && discretionary <= maxY && (
+          <line
+            x1="0"
+            y1={budgetY}
+            x2={width}
+            y2={budgetY}
+            stroke="currentColor"
+            strokeWidth="1"
+            strokeDasharray="4 4"
+            className="text-slate-300 dark:text-slate-600"
+          />
+        )}
+
+        <g clipPath={`url(#${revealClipId})`}>
+          {hasLine && <path d={areaPath} fill={`url(#${areaGradientId})`} />}
+          {hasLine && (
+            <path d={linePath} fill="none" stroke={`url(#${lineGradientId})`} strokeWidth="2.5" strokeLinecap="round" />
+          )}
+        </g>
+      </svg>
+      {lastPoint && (
+        <div
+          className={`absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#026e5c] shadow-sm transition-opacity dark:border-slate-800 ${durationClass} ${
+            grown ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{ left: `${(lastPoint[0] / width) * 100}%`, top: `${(lastPoint[1] / height) * 100}%` }}
+        />
+      )}
+      </div>
+
+      <div className="flex items-center justify-between text-sm">
+        <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          Income <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">{currency.format(income)}</span>
+        </span>
+        <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+          <span className="h-2 w-2 rounded-full bg-rose-500" />
+          Outgoing <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">{currency.format(outgoing)}</span>
+        </span>
+      </div>
+      <div className="flex items-center justify-between border-t border-slate-100 pt-1.5 text-sm dark:border-slate-700">
+        <span className="text-slate-600 dark:text-slate-300">Net</span>
+        <span
+          className={`font-semibold ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}
+        >
+          {net >= 0 ? '+' : ''}
+          {currency.format(net)}
+        </span>
       </div>
     </div>
   )
@@ -155,8 +183,33 @@ export default function Home() {
     return (expenses ?? []).filter((e) => e.date.startsWith(monthKey)).reduce((sum, e) => sum + e.total, 0)
   }, [expenses])
 
+  const billsTotal = totalMonthlyBills(bills ?? [])
   const monthlyIncomeTotal = totalMonthlyIncome(incomes ?? [])
-  const monthlyOutgoingTotal = totalMonthlyBills(bills ?? []) + monthExpensesTotal
+  const monthlyOutgoingTotal = billsTotal + monthExpensesTotal
+  const discretionary = monthlyIncomeTotal - billsTotal
+
+  const daysInMonth = useMemo(() => {
+    const now = new Date()
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  }, [])
+  const todayDayOfMonth = useMemo(() => new Date().getDate(), [])
+
+  const cumulativeSpend = useMemo(() => {
+    const monthKey = currentMonthKey()
+    const byDay = Array(daysInMonth + 1).fill(0)
+    for (const e of expenses ?? []) {
+      if (!e.date.startsWith(monthKey)) continue
+      const day = Number(e.date.slice(8, 10))
+      if (day >= 1 && day <= daysInMonth) byDay[day] += e.total
+    }
+    const cumulative: number[] = []
+    let running = 0
+    for (let d = 1; d <= daysInMonth; d++) {
+      running += byDay[d]
+      cumulative.push(running)
+    }
+    return cumulative
+  }, [expenses, daysInMonth])
 
   const dailyTotals = useMemo(() => {
     const totals: Record<string, number> = {}
@@ -206,7 +259,14 @@ export default function Home() {
   return (
     <div className="flex flex-col lg:gap-6 lg:px-4 lg:pt-6">
       <div className="flex flex-col gap-3 px-4 pt-4 lg:px-0 lg:pt-0">
-        <BudgetOverview income={monthlyIncomeTotal} outgoing={monthlyOutgoingTotal} />
+        <SpendingTrend
+          income={monthlyIncomeTotal}
+          outgoing={monthlyOutgoingTotal}
+          discretionary={discretionary}
+          cumulativeSpend={cumulativeSpend}
+          daysInMonth={daysInMonth}
+          todayDayOfMonth={todayDayOfMonth}
+        />
 
         {expenses !== null && expenses.length > 0 && (
           <input
