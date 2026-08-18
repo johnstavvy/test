@@ -5,6 +5,7 @@ import { listExpenses, totalsByCategory, totalsByMonth } from '../lib/expenses'
 import { listBills, totalMonthlyBills } from '../lib/bills'
 import { listIncomes, totalMonthlyIncome } from '../lib/income'
 import { currentMonthKey } from '../lib/week'
+import { useGrowIn } from '../lib/useGrowIn'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -25,6 +26,8 @@ function MonthlyBudget({ income, bills, spent }: { income: number; bills: number
   const pct = discretionary > 0 ? spent / discretionary : spent > 0 ? 1 : 0
   const over = spent > discretionary
   const remaining = discretionary - spent
+  const { grown, settled } = useGrowIn(700)
+  const widthPct = grown ? Math.min(Math.max(pct * 100, spent > 0 ? 4 : 0), 100) : 0
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -41,8 +44,8 @@ function MonthlyBudget({ income, bills, spent }: { income: number; bills: number
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
         <div
-          className={`h-full rounded-full transition-all duration-300 ${over ? 'bg-rose-500' : 'bg-accent'}`}
-          style={{ width: `${Math.min(Math.max(pct * 100, spent > 0 ? 4 : 0), 100)}%` }}
+          className={`h-full rounded-full transition-all ${settled ? 'duration-300' : 'duration-700 ease-out'} ${over ? 'bg-rose-500' : 'bg-accent'}`}
+          style={{ width: `${widthPct}%` }}
         />
       </div>
       <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
@@ -63,6 +66,7 @@ function monthLabel(key: string) {
 
 function BarList({ rows }: { rows: { label: string; total: number }[] }) {
   const max = Math.max(...rows.map((r) => r.total), 1)
+  const { grown, settled } = useGrowIn(700)
   return (
     <ul className="flex flex-col gap-3">
       {rows.map((r) => (
@@ -73,8 +77,8 @@ function BarList({ rows }: { rows: { label: string; total: number }[] }) {
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
             <div
-              className="h-full rounded-full bg-accent transition-all duration-300"
-              style={{ width: `${Math.max((r.total / max) * 100, 4)}%` }}
+              className={`h-full rounded-full bg-accent transition-all ${settled ? 'duration-300' : 'duration-700 ease-out'}`}
+              style={{ width: `${grown ? Math.max((r.total / max) * 100, 4) : 0}%` }}
             />
           </div>
         </li>

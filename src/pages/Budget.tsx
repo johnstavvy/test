@@ -8,6 +8,7 @@ import { usePeopleNames } from '../lib/people'
 import { isRecurring } from '../lib/recurring'
 import { useToast } from '../lib/toast'
 import { addToTrash, removeFromTrash } from '../lib/trash'
+import { useGrowIn } from '../lib/useGrowIn'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -684,6 +685,8 @@ function IncomeForm({
 function CashFlowChart({ income, outgoing }: { income: number; outgoing: number }) {
   const max = Math.max(income, outgoing, 1)
   const net = income - outgoing
+  const { grown, settled } = useGrowIn(700)
+  const durationClass = settled ? 'duration-300' : 'duration-700 ease-out'
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -698,8 +701,8 @@ function CashFlowChart({ income, outgoing }: { income: number; outgoing: number 
         </div>
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
           <div
-            className="h-full rounded-full bg-emerald-500 transition-all duration-300"
-            style={{ width: `${Math.max((income / max) * 100, income > 0 ? 4 : 0)}%` }}
+            className={`h-full rounded-full bg-emerald-500 transition-all ${durationClass}`}
+            style={{ width: `${grown ? Math.max((income / max) * 100, income > 0 ? 4 : 0) : 0}%` }}
           />
         </div>
       </div>
@@ -711,8 +714,8 @@ function CashFlowChart({ income, outgoing }: { income: number; outgoing: number 
         </div>
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
           <div
-            className="h-full rounded-full bg-rose-500 transition-all duration-300"
-            style={{ width: `${Math.max((outgoing / max) * 100, outgoing > 0 ? 4 : 0)}%` }}
+            className={`h-full rounded-full bg-rose-500 transition-all ${durationClass}`}
+            style={{ width: `${grown ? Math.max((outgoing / max) * 100, outgoing > 0 ? 4 : 0) : 0}%` }}
           />
         </div>
       </div>

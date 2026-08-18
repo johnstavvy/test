@@ -5,6 +5,7 @@ import { listExpenses } from '../lib/expenses'
 import { listBills, totalMonthlyBills } from '../lib/bills'
 import { listIncomes, totalMonthlyIncome } from '../lib/income'
 import { currentMonthKey, currentWeekDays, dateFromIso, isoDate } from '../lib/week'
+import { useGrowIn } from '../lib/useGrowIn'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -26,6 +27,8 @@ function BudgetOverview({ income, outgoing }: { income: number; outgoing: number
   const net = income - outgoing
   const r = 30
   const circumference = 2 * Math.PI * r
+  const { grown, settled } = useGrowIn(700)
+  const dashLength = (grown ? incomePct : 0) * circumference
 
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -38,8 +41,8 @@ function BudgetOverview({ income, outgoing }: { income: number; outgoing: number
           fill="none"
           strokeWidth="10"
           strokeLinecap={incomePct > 0 && incomePct < 1 ? 'butt' : 'round'}
-          className="stroke-emerald-500 transition-all duration-300"
-          strokeDasharray={`${circumference * incomePct} ${circumference}`}
+          className={`stroke-emerald-500 transition-all ${settled ? 'duration-300' : 'duration-700 ease-out'}`}
+          strokeDasharray={`${dashLength} ${circumference}`}
         />
       </svg>
 
@@ -100,6 +103,7 @@ export default function Home() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [recentOpen, setRecentOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const barGrow = useGrowIn(700)
 
   useEffect(() => {
     listExpenses().then(setExpenses)
@@ -221,7 +225,7 @@ export default function Home() {
         <div className="flex flex-1 items-end justify-between gap-2 border-b border-slate-200 pb-0 dark:border-slate-700">
           {days.map((iso) => {
             const value = dailyTotals[iso]
-            const heightPct = Math.max((value / maxValue) * 100, value > 0 ? 8 : 3)
+            const heightPct = barGrow.grown ? Math.max((value / maxValue) * 100, value > 0 ? 8 : 3) : 0
             const isSelected = selectedDay === iso
             return (
               <button
@@ -231,7 +235,9 @@ export default function Home() {
                 className="flex h-24 flex-1 flex-col items-center justify-end gap-1.5 lg:h-40"
               >
                 <div
-                  className={`w-full max-w-[24px] rounded-t bg-accent transition-all duration-200 lg:max-w-[32px] ${
+                  className={`w-full max-w-[24px] rounded-t bg-accent transition-all lg:max-w-[32px] ${
+                    barGrow.settled ? 'duration-200' : 'duration-700 ease-out'
+                  } ${
                     isSelected
                       ? 'ring-2 ring-accent ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900'
                       : ''
