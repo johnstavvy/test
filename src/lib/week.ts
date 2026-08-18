@@ -1,5 +1,11 @@
+// Local calendar date as "yyyy-mm-dd" — deliberately NOT toISOString(), which
+// converts to UTC first and can silently roll over to the wrong calendar day
+// depending on timezone and time of day (e.g. evenings in US timezones).
 export function isoDate(d: Date): string {
-  return d.toISOString().slice(0, 10)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 export function dateFromIso(iso: string): Date {

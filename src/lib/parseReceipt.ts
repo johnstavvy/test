@@ -1,4 +1,5 @@
 import { guessCategory } from './categorize'
+import { isoDate } from './week'
 import type { Category } from '../db'
 
 export interface ParsedReceipt {
@@ -81,7 +82,7 @@ export function parseReceiptText(text: string): ParsedReceipt {
 
   return {
     merchant: merchant.slice(0, 80),
-    date: date ?? new Date().toISOString().slice(0, 10),
+    date: date ?? isoDate(new Date()),
     total: total ?? 0,
     category: guessCategory(text),
   }

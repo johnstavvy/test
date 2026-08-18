@@ -6,6 +6,7 @@ import { recognizeReceiptText } from '../lib/ocr'
 import { parseReceiptText } from '../lib/parseReceipt'
 import { addExpense } from '../lib/expenses'
 import { useToast } from '../lib/toast'
+import { isoDate } from '../lib/week'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -15,7 +16,7 @@ type TorchCapabilities = MediaTrackCapabilities & { torch?: boolean }
 type TorchConstraintSet = MediaTrackConstraintSet & { torch?: boolean }
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10)
+  return isoDate(new Date())
 }
 
 export default function Capture() {
