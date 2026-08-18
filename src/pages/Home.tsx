@@ -14,6 +14,7 @@ function SpendingTrend({
   outgoing,
   discretionary,
   cumulativeSpend,
+  cumulativeIncome,
   daysInMonth,
   todayDayOfMonth,
 }: {
@@ -21,11 +22,12 @@ function SpendingTrend({
   outgoing: number
   discretionary: number
   cumulativeSpend: number[]
+  cumulativeIncome: number[]
   daysInMonth: number
   todayDayOfMonth: number
 }) {
   const gradientId = useId()
-  const { grown, settled } = useGrowIn(1000)
+  const { grown, settled } = useGrowIn(1250)
 
   if (income === 0 && outgoing === 0) {
     return (
@@ -40,15 +42,17 @@ function SpendingTrend({
   }
 
   const net = income - outgoing
-  const durationClass = settled ? 'duration-300' : 'duration-1000 ease-out'
+  const durationClass = settled ? 'duration-300' : 'duration-[1250ms] ease-out'
   const areaGradientId = `${gradientId}-area`
   const lineGradientId = `${gradientId}-line`
+  const incomeGradientId = `${gradientId}-income`
   const revealClipId = `${gradientId}-reveal`
 
   const width = 280
   const height = 84
   const spentSoFar = cumulativeSpend[todayDayOfMonth - 1] ?? 0
-  const maxY = Math.max(discretionary, spentSoFar, 1) * 1.15
+  const incomeSoFar = cumulativeIncome[cumulativeIncome.length - 1] ?? 0
+  const maxY = Math.max(discretionary, spentSoFar, incomeSoFar, 1) * 1.15
   const xAt = (day: number) => (daysInMonth > 1 ? ((day - 1) / (daysInMonth - 1)) * width : 0)
   const yAt = (value: number) => height - (value / maxY) * height
 
@@ -60,6 +64,14 @@ function SpendingTrend({
     : ''
   const budgetY = yAt(discretionary)
   const lastPoint = points[points.length - 1]
+
+  // Income is a known, scheduled amount (paid on specific days-of-month), not a running
+  // actual like spending — so its line covers the whole month, not just "so far".
+  const incomePoints = cumulativeIncome.map((value, i) => [xAt(i + 1), yAt(value)])
+  const hasIncomeLine = incomePoints.length >= 2
+  const incomeLinePath = hasIncomeLine
+    ? incomePoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]},${p[1]}`).join(' ')
+    : ''
 
   return (
     <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
@@ -82,6 +94,10 @@ function SpendingTrend({
           <linearGradient id={lineGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#fb7185" />
             <stop offset="100%" stopColor="#e11d48" />
+          </linearGradient>
+          <linearGradient id={incomeGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#34d399" />
+            <stop offset="100%" stopColor="#059669" />
           </linearGradient>
           <clipPath id={revealClipId}>
             <rect
@@ -109,6 +125,16 @@ function SpendingTrend({
 
         <g clipPath={`url(#${revealClipId})`}>
           {hasLine && <path d={areaPath} fill={`url(#${areaGradientId})`} />}
+          {hasIncomeLine && (
+            <path
+              d={incomeLinePath}
+              fill="none"
+              stroke={`url(#${incomeGradientId})`}
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeOpacity="0.85"
+            />
+          )}
           {hasLine && (
             <path d={linePath} fill="none" stroke={`url(#${lineGradientId})`} strokeWidth="2.5" strokeLinecap="round" />
           )}
@@ -168,7 +194,7 @@ export default function Home() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [recentOpen, setRecentOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const barGrow = useGrowIn(1000)
+  const barGrow = useGrowIn(1250)
 
   useEffect(() => {
     listExpenses().then(setExpenses)
@@ -210,6 +236,21 @@ export default function Home() {
     }
     return cumulative
   }, [expenses, daysInMonth])
+
+  const cumulativeIncome = useMemo(() => {
+    const byDay = Array(daysInMonth + 1).fill(0)
+    for (const inc of incomes ?? []) {
+      const day = Math.min(inc.payDay, daysInMonth)
+      byDay[day] += inc.amount
+    }
+    const cumulative: number[] = []
+    let running = 0
+    for (let d = 1; d <= daysInMonth; d++) {
+      running += byDay[d]
+      cumulative.push(running)
+    }
+    return cumulative
+  }, [incomes, daysInMonth])
 
   const dailyTotals = useMemo(() => {
     const totals: Record<string, number> = {}
@@ -264,6 +305,7 @@ export default function Home() {
           outgoing={monthlyOutgoingTotal}
           discretionary={discretionary}
           cumulativeSpend={cumulativeSpend}
+          cumulativeIncome={cumulativeIncome}
           daysInMonth={daysInMonth}
           todayDayOfMonth={todayDayOfMonth}
         />
@@ -333,7 +375,7 @@ export default function Home() {
               >
                 <div
                   className={`w-full max-w-[24px] rounded-t bg-accent transition-all lg:max-w-[32px] ${
-                    barGrow.settled ? 'duration-200' : 'duration-1000 ease-out'
+                    barGrow.settled ? 'duration-200' : 'duration-[1250ms] ease-out'
                   } ${
                     isSelected
                       ? 'ring-2 ring-accent ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900'
