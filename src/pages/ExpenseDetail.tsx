@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { CATEGORIES, db, type Category, type Expense } from '../db'
 import { deleteExpense, updateExpense } from '../lib/expenses'
+import { useToast } from '../lib/toast'
 
 export default function ExpenseDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const toast = useToast()
   const [expense, setExpense] = useState<Expense | null>(null)
   const [saved, setSaved] = useState(false)
 
@@ -36,9 +38,14 @@ export default function ExpenseDetail() {
 
   async function handleDelete() {
     if (!expense) return
-    if (!confirm('Delete this expense?')) return
-    await deleteExpense(expense.id)
+    const toDelete = expense
+    await deleteExpense(toDelete.id)
     navigate('/')
+    toast.show({
+      message: `Deleted "${toDelete.merchant}"`,
+      actionLabel: 'Undo',
+      onAction: () => db.expenses.put(toDelete),
+    })
   }
 
   return (

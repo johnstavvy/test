@@ -5,6 +5,9 @@ import { fileToResizedDataUrl, videoFrameToResizedDataUrl } from '../lib/image'
 import { recognizeReceiptText } from '../lib/ocr'
 import { parseReceiptText } from '../lib/parseReceipt'
 import { addExpense } from '../lib/expenses'
+import { useToast } from '../lib/toast'
+
+const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
 type Stage = 'idle' | 'camera' | 'scanning' | 'review' | 'saving'
 
@@ -17,6 +20,7 @@ function todayIso() {
 
 export default function Capture() {
   const navigate = useNavigate()
+  const toast = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -151,15 +155,18 @@ export default function Capture() {
 
   async function handleSave() {
     setStage('saving')
+    const savedMerchant = merchant.trim() || 'Unknown Merchant'
+    const savedTotal = parseFloat(total) || 0
     await addExpense({
-      merchant: merchant.trim() || 'Unknown Merchant',
+      merchant: savedMerchant,
       date,
-      total: parseFloat(total) || 0,
+      total: savedTotal,
       category,
       rawText,
       imageDataUrl,
     })
     navigate('/')
+    toast.show({ message: `Saved "${savedMerchant}" — ${currency.format(savedTotal)} · ${category}` })
   }
 
   function reset() {

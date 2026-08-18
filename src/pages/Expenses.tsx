@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CATEGORIES, type Expense } from '../db'
-import { listExpenses } from '../lib/expenses'
+import { CATEGORIES, db, type Expense } from '../db'
+import { deleteExpense, listExpenses } from '../lib/expenses'
 import { dateFromIso, isoDate, mondayOf } from '../lib/week'
 import { IconScan } from '../lib/icons'
+import { useSwipeToDelete } from '../lib/useSwipeToDelete'
+import { useToast } from '../lib/toast'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -26,16 +28,63 @@ function weekRangeLabel(mondayIso: string) {
   return `${start.toLocaleDateString('en-US', opts)} – ${end.toLocaleDateString('en-US', opts)}`
 }
 
+function ExpenseRow({ expense, onDelete }: { expense: Expense; onDelete: (e: Expense) => void }) {
+  const swipe = useSwipeToDelete()
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl">
+      <button
+        onClick={() => onDelete(expense)}
+        aria-label={`Delete ${expense.merchant}`}
+        className="absolute inset-y-0 right-0 flex w-20 items-center justify-center rounded-2xl bg-red-500 text-sm font-semibold text-white"
+      >
+        Delete
+      </button>
+      <Link
+        to={`/expense/${expense.id}`}
+        draggable={false}
+        onClickCapture={swipe.handleClickCapture}
+        {...swipe.handlers}
+        style={{
+          transform: `translateX(${swipe.offset}px)`,
+          transition: swipe.isDragging ? 'none' : 'transform 200ms ease-out',
+          touchAction: 'pan-y',
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none',
+        }}
+        className="relative flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800 lg:hover:border-accent/40 lg:hover:shadow-sm"
+      >
+        <div className="min-w-0">
+          <p className="truncate font-medium text-slate-900 dark:text-slate-100">{expense.merchant}</p>
+          <div className="mt-1 flex items-center gap-2">
+            <span
+              className={`rounded-full px-2 py-0.5 text-xs font-medium ${CATEGORY_COLORS[expense.category] ?? CATEGORY_COLORS.Other}`}
+            >
+              {expense.category}
+            </span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">{expense.date}</span>
+          </div>
+        </div>
+        <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
+          {currency.format(expense.total)}
+        </p>
+      </Link>
+    </div>
+  )
+}
+
 function WeekGroup({
   items,
   label,
   isOpen,
   onToggle,
+  onDelete,
 }: {
   items: Expense[]
   label: string
   isOpen: boolean
   onToggle: () => void
+  onDelete: (e: Expense) => void
 }) {
   const total = items.reduce((sum, e) => sum + e.total, 0)
 
@@ -66,25 +115,7 @@ function WeekGroup({
         <ul className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:gap-3">
           {items.map((e) => (
             <li key={e.id}>
-              <Link
-                to={`/expense/${e.id}`}
-                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-sm"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-slate-900 dark:text-slate-100">{e.merchant}</p>
-                  <div className="mt-1 flex items-center gap-2">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${CATEGORY_COLORS[e.category] ?? CATEGORY_COLORS.Other}`}
-                    >
-                      {e.category}
-                    </span>
-                    <span className="text-xs text-slate-400 dark:text-slate-500">{e.date}</span>
-                  </div>
-                </div>
-                <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
-                  {currency.format(e.total)}
-                </p>
-              </Link>
+              <ExpenseRow expense={e} onDelete={onDelete} />
             </li>
           ))}
         </ul>
@@ -98,10 +129,24 @@ export default function Expenses() {
   const [overrides, setOverrides] = useState<Record<string, boolean>>({})
   const [query, setQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
+  const toast = useToast()
 
   useEffect(() => {
     listExpenses().then(setExpenses)
   }, [])
+
+  async function handleDelete(expense: Expense) {
+    await deleteExpense(expense.id)
+    setExpenses((prev) => prev?.filter((e) => e.id !== expense.id) ?? prev)
+    toast.show({
+      message: `Deleted "${expense.merchant}"`,
+      actionLabel: 'Undo',
+      onAction: async () => {
+        await db.expenses.put(expense)
+        listExpenses().then(setExpenses)
+      },
+    })
+  }
 
   const isFiltering = query.trim() !== '' || categoryFilter !== 'All'
 
@@ -141,8 +186,7 @@ export default function Expenses() {
       <Link
         to="/capture"
         aria-label="Scan a receipt"
-        className="fixed right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-lg shadow-slate-900/20 transition-transform duration-150 active:scale-90 lg:bottom-8"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 6rem)' }}
+        className="fixed right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-lg shadow-slate-900/20 transition-transform duration-150 active:scale-90 bottom-[calc(env(safe-area-inset-bottom)+6rem)] lg:bottom-8"
       >
         <IconScan className="h-6 w-6" />
       </Link>
@@ -204,6 +248,7 @@ export default function Expenses() {
                 label={label}
                 isOpen={isOpen}
                 onToggle={() => setOverrides((prev) => ({ ...prev, [weekKey]: !isOpen }))}
+                onDelete={handleDelete}
               />
             )
           })}

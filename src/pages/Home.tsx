@@ -99,6 +99,7 @@ export default function Home() {
   const [incomes, setIncomes] = useState<Income[] | null>(null)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [recentOpen, setRecentOpen] = useState(false)
+  const [query, setQuery] = useState('')
 
   useEffect(() => {
     listExpenses().then(setExpenses)
@@ -144,12 +145,66 @@ export default function Home() {
     return isoDate(new Date(t.getFullYear(), t.getMonth(), t.getDate() - 1))
   }, [todayIso])
 
+  const q = query.trim().toLowerCase()
+  const isSearching = q !== ''
+
+  const searchResults = useMemo(() => {
+    if (!isSearching) return []
+    return (expenses ?? []).filter((e) => e.merchant.toLowerCase().includes(q))
+  }, [expenses, q, isSearching])
+
+  const searchGroups = useMemo(() => {
+    const map = new Map<string, Expense[]>()
+    for (const e of searchResults) {
+      if (!map.has(e.date)) map.set(e.date, [])
+      map.get(e.date)!.push(e)
+    }
+    return [...map.entries()]
+  }, [searchResults])
+
   return (
     <div className="flex flex-col lg:gap-6 lg:px-4 lg:pt-6">
-      <div className="px-4 pt-4 lg:px-0 lg:pt-0">
+      <div className="flex flex-col gap-3 px-4 pt-4 lg:px-0 lg:pt-0">
         <BudgetOverview income={monthlyIncomeTotal} outgoing={monthlyOutgoingTotal} />
+
+        {expenses !== null && expenses.length > 0 && (
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search merchant…"
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          />
+        )}
       </div>
 
+      {isSearching ? (
+        <div className="flex flex-col gap-2 px-4 pb-6 lg:px-0">
+          {searchResults.length === 0 && (
+            <p className="px-1 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+              No expenses match "{query.trim()}".
+            </p>
+          )}
+          {searchGroups.map(([date, items]) => (
+            <div key={date} className="flex flex-col gap-2">
+              <p className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                {dayLabel(date, todayIso, yesterdayIso)}
+              </p>
+              {items.map((e) => (
+                <Link
+                  key={e.id}
+                  to={`/expense/${e.id}`}
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-md"
+                >
+                  <p className="truncate font-medium text-slate-900 dark:text-slate-100">{e.merchant}</p>
+                  <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
+                    {currency.format(e.total)}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          ))}
+        </div>
+      ) : (
       <div className="flex flex-col lg:flex-row lg:items-start lg:gap-6">
       <section
         className="flex flex-col gap-3 px-4 pb-5 pt-6 min-h-[25dvh] lg:min-h-[320px] lg:flex-1 lg:px-0 lg:pb-0 lg:pt-0"
@@ -249,6 +304,7 @@ export default function Home() {
         )}
       </section>
       </div>
+      )}
     </div>
   )
 }

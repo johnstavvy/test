@@ -3,6 +3,8 @@ import { useTheme } from '../lib/theme'
 import { useNavOrder } from '../lib/navOrder'
 import { downloadBackup, exportData, parseBackupFile, restoreBackup } from '../lib/backup'
 import { useCustomRules } from '../lib/customCategories'
+import { useConfirm } from '../lib/confirm'
+import { useToast } from '../lib/toast'
 import { CATEGORIES, type Category } from '../db'
 
 export default function Settings() {
@@ -13,6 +15,8 @@ export default function Settings() {
   const { rules, add, remove } = useCustomRules()
   const [ruleKeyword, setRuleKeyword] = useState('')
   const [ruleCategory, setRuleCategory] = useState<Category>(CATEGORIES[0])
+  const confirmDialog = useConfirm()
+  const toast = useToast()
 
   async function handleExport() {
     const data = await exportData()
@@ -32,12 +36,25 @@ export default function Settings() {
       const text = await file.text()
       const data = parseBackupFile(text)
       const summary = `${data.expenses.length} expenses, ${data.bills.length} bills, ${data.incomes.length} income sources`
-      if (!confirm(`Import backup from ${data.exportedAt.slice(0, 10)}?\n\nThis replaces everything currently on this device with ${summary}. This can't be undone.`)) {
-        return
-      }
+      const proceed = await confirmDialog({
+        title: `Import backup from ${data.exportedAt.slice(0, 10)}?`,
+        message: `This replaces everything currently on this device with ${summary}.`,
+        confirmLabel: 'Replace data',
+        destructive: true,
+      })
+      if (!proceed) return
+
+      const previous = await exportData()
       await restoreBackup(data)
-      setImportStatus('Import complete — reloading…')
-      setTimeout(() => window.location.reload(), 600)
+      setImportStatus(`Imported ${summary}.`)
+      toast.show({
+        message: 'Backup imported',
+        actionLabel: 'Undo',
+        onAction: async () => {
+          await restoreBackup(previous)
+          setImportStatus(null)
+        },
+      })
     } catch (err) {
       setImportStatus(err instanceof Error ? err.message : 'Import failed.')
     }

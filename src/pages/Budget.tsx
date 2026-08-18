@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { BILL_CATEGORIES, type Bill, type BillCategory, type Expense, type Income } from '../db'
+import { BILL_CATEGORIES, db, type Bill, type BillCategory, type Expense, type Income } from '../db'
 import { addBill, daysUntilDue, deleteBill, effectiveAmount, listBills, totalMonthlyBills, updateBill } from '../lib/bills'
 import { addIncome, deleteIncome, listIncomes, totalMonthlyIncome, updateIncome } from '../lib/income'
 import { listExpenses } from '../lib/expenses'
 import { currentMonthKey } from '../lib/week'
 import { usePeopleNames } from '../lib/people'
 import { isRecurring } from '../lib/recurring'
+import { useToast } from '../lib/toast'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -319,11 +320,14 @@ function BillListItem({ bill, compact, onClick }: { bill: Bill; compact?: boolea
   )
 }
 
-function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) {
+function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; reload: () => void }) {
   const [editing, setEditing] = useState<number | 'new' | null>(null)
   const [newGroupKey, setNewGroupKey] = useState<BillGroupKey>('home')
   const [newSubPerson, setNewSubPerson] = useState<1 | 2>(1)
   const { names, renaming, nameDraft, setNameDraft, startRename, saveRename } = usePeopleNames()
+  const toast = useToast()
+  const q = query.trim().toLowerCase()
+  const matches = (name: string) => !q || name.toLowerCase().includes(q)
 
   const grouped = useMemo(() => {
     const groups: Record<BillGroupKey, Bill[]> = { home: [], subscriptions: [] }
@@ -344,11 +348,18 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
     reload()
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm('Delete this bill?')) return
-    await deleteBill(id)
+  async function handleDelete(bill: Bill) {
+    await deleteBill(bill.id)
     setEditing(null)
     reload()
+    toast.show({
+      message: `Deleted "${bill.name}"`,
+      actionLabel: 'Undo',
+      onAction: async () => {
+        await db.bills.put(bill)
+        reload()
+      },
+    })
   }
 
   return (
@@ -400,7 +411,7 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
                   names={names}
                   onSave={handleSave}
                   onCancel={() => setEditing(null)}
-                  onDelete={() => handleDelete(editingBill.id)}
+                  onDelete={() => handleDelete(editingBill)}
                 />
               )}
 
@@ -415,6 +426,7 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
                 {([1, 2] as const).map((personNum) => {
                   const idx = (personNum - 1) as 0 | 1
                   const personList = list.filter((bill) => personOf(bill) === personNum)
+                  const visiblePersonList = personList.filter((bill) => matches(bill.name) || bill.id === editing)
 
                   return (
                     <div key={personNum} className="flex flex-col gap-2">
@@ -442,11 +454,13 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
                         )}
                       </div>
 
-                      {personList.length === 0 ? (
-                        <p className="px-1 text-xs text-slate-400 dark:text-slate-500">None yet.</p>
+                      {visiblePersonList.length === 0 ? (
+                        <p className="px-1 text-xs text-slate-400 dark:text-slate-500">
+                          {personList.length === 0 ? 'None yet.' : 'No matches.'}
+                        </p>
                       ) : (
                         <ul className="flex flex-col gap-2">
-                          {personList.map((bill) => (
+                          {visiblePersonList.map((bill) => (
                             <li key={bill.id}>
                               <BillListItem compact bill={bill} onClick={() => setEditing(bill.id)} />
                             </li>
@@ -460,6 +474,8 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
             </div>
           )
         }
+
+        const visibleList = list.filter((bill) => matches(bill.name) || bill.id === editing)
 
         return (
           <div key={group.key} className="flex flex-col gap-2">
@@ -499,8 +515,12 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
               </div>
             )}
 
+            {list.length > 0 && visibleList.length === 0 && (
+              <p className="px-1 py-3 text-center text-sm text-slate-400 dark:text-slate-500">No matches.</p>
+            )}
+
             <ul className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:gap-3">
-              {list.map((bill) => (
+              {visibleList.map((bill) => (
                 <li key={bill.id}>
                   {editing === bill.id ? (
                     <BillForm
@@ -516,7 +536,7 @@ function BillsSection({ bills, reload }: { bills: Bill[]; reload: () => void }) 
                       names={names}
                       onSave={handleSave}
                       onCancel={() => setEditing(null)}
-                      onDelete={() => handleDelete(bill.id)}
+                      onDelete={() => handleDelete(bill)}
                     />
                   ) : (
                     <BillListItem bill={bill} onClick={() => setEditing(bill.id)} />
@@ -740,11 +760,13 @@ function PersonHeader({
 
 function IncomeSection({
   incomes,
+  query,
   billsTotal,
   monthExpensesTotal,
   reload,
 }: {
   incomes: Income[]
+  query: string
   billsTotal: number
   monthExpensesTotal: number
   reload: () => void
@@ -752,6 +774,9 @@ function IncomeSection({
   const [editing, setEditing] = useState<number | 'new' | null>(null)
   const [newPerson, setNewPerson] = useState<1 | 2>(1)
   const { names, renaming, nameDraft, setNameDraft, startRename, saveRename } = usePeopleNames()
+  const toast = useToast()
+  const q = query.trim().toLowerCase()
+  const matches = (source: string) => !q || source.toLowerCase().includes(q)
 
   const incomeTotal = totalMonthlyIncome(incomes)
   const outgoing = billsTotal + monthExpensesTotal
@@ -770,11 +795,18 @@ function IncomeSection({
     reload()
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm('Delete this income source?')) return
-    await deleteIncome(id)
+  async function handleDelete(income: Income) {
+    await deleteIncome(income.id)
     setEditing(null)
     reload()
+    toast.show({
+      message: `Deleted "${income.source}"`,
+      actionLabel: 'Undo',
+      onAction: async () => {
+        await db.incomes.put(income)
+        reload()
+      },
+    })
   }
 
   return (
@@ -784,6 +816,7 @@ function IncomeSection({
       {([1, 2] as const).map((personNum) => {
         const idx = (personNum - 1) as 0 | 1
         const list = byPerson[personNum]
+        const visibleList = list.filter((income) => matches(income.source) || income.id === editing)
         const isAddingHere = editing === 'new' && newPerson === personNum
 
         return (
@@ -826,8 +859,12 @@ function IncomeSection({
               </p>
             )}
 
+            {list.length > 0 && visibleList.length === 0 && (
+              <p className="px-1 py-3 text-center text-sm text-slate-400 dark:text-slate-500">No matches.</p>
+            )}
+
             <ul className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:gap-3">
-              {list.map((income) => (
+              {visibleList.map((income) => (
                 <li key={income.id}>
                   {editing === income.id ? (
                     <IncomeForm
@@ -842,7 +879,7 @@ function IncomeSection({
                       names={names}
                       onSave={handleSave}
                       onCancel={() => setEditing(null)}
-                      onDelete={() => handleDelete(income.id)}
+                      onDelete={() => handleDelete(income)}
                     />
                   ) : (
                     <button
@@ -875,6 +912,7 @@ function IncomeSection({
 
 export default function Budget() {
   const [section, setSection] = useState<'bills' | 'income'>('bills')
+  const [query, setQuery] = useState('')
   const [bills, setBills] = useState<Bill[] | null>(null)
   const [incomes, setIncomes] = useState<Income[] | null>(null)
   const [expenses, setExpenses] = useState<Expense[] | null>(null)
@@ -912,11 +950,21 @@ export default function Budget() {
         ))}
       </div>
 
+      {(section === 'bills' ? bills.length > 0 : incomes.length > 0) && (
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={section === 'bills' ? 'Search bills…' : 'Search income…'}
+          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+        />
+      )}
+
       {section === 'bills' ? (
-        <BillsSection bills={bills} reload={reload} />
+        <BillsSection bills={bills} query={query} reload={reload} />
       ) : (
         <IncomeSection
           incomes={incomes}
+          query={query}
           billsTotal={totalMonthlyBills(bills)}
           monthExpensesTotal={monthExpensesTotal}
           reload={reload}
