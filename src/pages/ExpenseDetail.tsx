@@ -94,8 +94,9 @@ export default function ExpenseDetail() {
             type="number"
             inputMode="decimal"
             step="0.01"
-            value={expense.total}
-            onChange={(e) => set('total', parseFloat(e.target.value) || 0)}
+            value={Number.isNaN(expense.total) ? '' : expense.total}
+            onChange={(e) => set('total', e.target.value === '' ? NaN : parseFloat(e.target.value))}
+            onBlur={() => Number.isNaN(expense.total) && set('total', 0)}
             className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
           />
         </label>

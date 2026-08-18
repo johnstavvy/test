@@ -179,8 +179,9 @@ function BillForm({
             type="number"
             inputMode="decimal"
             step="0.01"
-            value={draft.amount}
-            onChange={(e) => set('amount', parseFloat(e.target.value) || 0)}
+            value={Number.isNaN(draft.amount) ? '' : draft.amount}
+            onChange={(e) => set('amount', e.target.value === '' ? NaN : parseFloat(e.target.value))}
+            onBlur={() => Number.isNaN(draft.amount) && set('amount', 0)}
             className={inputClass}
           />
         </label>
@@ -191,8 +192,11 @@ function BillForm({
             inputMode="numeric"
             min={1}
             max={31}
-            value={draft.dueDay}
-            onChange={(e) => set('dueDay', Math.min(31, Math.max(1, parseInt(e.target.value) || 1)))}
+            value={Number.isNaN(draft.dueDay) ? '' : draft.dueDay}
+            onChange={(e) =>
+              set('dueDay', e.target.value === '' ? NaN : Math.min(31, Math.max(1, parseInt(e.target.value) || 1)))
+            }
+            onBlur={() => Number.isNaN(draft.dueDay) && set('dueDay', 1)}
             className={inputClass}
           />
         </label>
@@ -622,8 +626,9 @@ function IncomeForm({
             type="number"
             inputMode="decimal"
             step="0.01"
-            value={draft.amount}
-            onChange={(e) => set('amount', parseFloat(e.target.value) || 0)}
+            value={Number.isNaN(draft.amount) ? '' : draft.amount}
+            onChange={(e) => set('amount', e.target.value === '' ? NaN : parseFloat(e.target.value))}
+            onBlur={() => Number.isNaN(draft.amount) && set('amount', 0)}
             className={inputClass}
           />
         </label>
@@ -634,8 +639,11 @@ function IncomeForm({
             inputMode="numeric"
             min={1}
             max={31}
-            value={draft.payDay}
-            onChange={(e) => set('payDay', Math.min(31, Math.max(1, parseInt(e.target.value) || 1)))}
+            value={Number.isNaN(draft.payDay) ? '' : draft.payDay}
+            onChange={(e) =>
+              set('payDay', e.target.value === '' ? NaN : Math.min(31, Math.max(1, parseInt(e.target.value) || 1)))
+            }
+            onBlur={() => Number.isNaN(draft.payDay) && set('payDay', 1)}
             className={inputClass}
           />
         </label>
