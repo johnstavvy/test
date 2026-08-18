@@ -27,8 +27,10 @@ body {
   background-color: #0f172a;
 }
 
-input, button, textarea, select {
-  font: inherit;
+@layer base {
+  input, button, textarea, select {
+    font: inherit;
+  }
 }
 
 button {

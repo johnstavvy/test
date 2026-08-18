@@ -154,6 +154,10 @@ export default function Capture() {
   }
 
   async function handleSave() {
+    // Blur whatever field is focused before we unmount this page — otherwise
+    // iOS Safari can leave the viewport zoomed in on the now-gone input,
+    // requiring a manual pinch to zoom back out.
+    ;(document.activeElement as HTMLElement | null)?.blur()
     setStage('saving')
     const savedMerchant = merchant.trim() || 'Unknown Merchant'
     const savedTotal = parseFloat(total) || 0
@@ -165,7 +169,7 @@ export default function Capture() {
       rawText,
       imageDataUrl,
     })
-    navigate('/')
+    navigate('/expenses')
     toast.show({ message: `Saved "${savedMerchant}" — ${currency.format(savedTotal)} · ${category}` })
   }
 

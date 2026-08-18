@@ -263,12 +263,12 @@ export default function Settings() {
             value={ruleKeyword}
             onChange={(e) => setRuleKeyword(e.target.value)}
             placeholder="e.g. Joe's Diner"
-            className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
           />
           <select
             value={ruleCategory}
             onChange={(e) => setRuleCategory(e.target.value as Category)}
-            className="shrink-0 rounded-xl border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            className="shrink-0 rounded-xl border border-slate-300 bg-white px-2 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
           >
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>

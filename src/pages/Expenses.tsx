@@ -211,7 +211,7 @@ export default function Expenses() {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="shrink-0 rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-sm text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              className="shrink-0 rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
             >
               <option value="All">All categories</option>
               {CATEGORIES.map((c) => (

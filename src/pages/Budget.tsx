@@ -745,7 +745,7 @@ function PersonHeader({
         onChange={(e) => onNameDraftChange(e.target.value)}
         onBlur={onSaveRename}
         onKeyDown={(e) => e.key === 'Enter' && (e.currentTarget as HTMLInputElement).blur()}
-        className="rounded-lg border border-accent/40 bg-white px-2 py-1 text-sm font-semibold text-slate-900 focus:outline-none dark:bg-slate-800 dark:text-slate-100"
+        className="rounded-lg border border-accent/40 bg-white px-2 py-1 text-base font-semibold text-slate-900 focus:outline-none dark:bg-slate-800 dark:text-slate-100"
       />
     )
   }
