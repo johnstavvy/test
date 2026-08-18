@@ -10,6 +10,8 @@ import { useGrowIn } from '../lib/useGrowIn'
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
 function MonthlyBudget({ income, bills, spent }: { income: number; bills: number; spent: number }) {
+  const { grown, settled } = useGrowIn(700)
+
   if (income === 0 && bills === 0) {
     return (
       <Link
@@ -26,7 +28,6 @@ function MonthlyBudget({ income, bills, spent }: { income: number; bills: number
   const pct = discretionary > 0 ? spent / discretionary : spent > 0 ? 1 : 0
   const over = spent > discretionary
   const remaining = discretionary - spent
-  const { grown, settled } = useGrowIn(700)
   const widthPct = grown ? Math.min(Math.max(pct * 100, spent > 0 ? 4 : 0), 100) : 0
 
   return (

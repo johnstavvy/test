@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Bill, Expense, Income } from '../db'
 import { listExpenses } from '../lib/expenses'
@@ -8,8 +8,17 @@ import { currentMonthKey, currentWeekDays, dateFromIso, isoDate } from '../lib/w
 import { useGrowIn } from '../lib/useGrowIn'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+const compactCurrency = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  notation: 'compact',
+  maximumFractionDigits: 1,
+})
 
 function BudgetOverview({ income, outgoing }: { income: number; outgoing: number }) {
+  const gradientId = useId()
+  const { grown, settled } = useGrowIn(700)
+
   if (income === 0 && outgoing === 0) {
     return (
       <Link
@@ -25,26 +34,54 @@ function BudgetOverview({ income, outgoing }: { income: number; outgoing: number
   const total = income + outgoing
   const incomePct = total > 0 ? income / total : 0
   const net = income - outgoing
-  const r = 30
+  const r = 34
   const circumference = 2 * Math.PI * r
-  const { grown, settled } = useGrowIn(700)
   const dashLength = (grown ? incomePct : 0) * circumference
+  const durationClass = settled ? 'duration-300' : 'duration-700 ease-out'
+  const incomeGradientId = `${gradientId}-income`
+  const outgoingGradientId = `${gradientId}-outgoing`
 
   return (
     <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-      <svg width="72" height="72" viewBox="0 0 72 72" className="-rotate-90 shrink-0">
-        <circle cx="36" cy="36" r={r} fill="none" strokeWidth="10" className="stroke-rose-500" />
-        <circle
-          cx="36"
-          cy="36"
-          r={r}
-          fill="none"
-          strokeWidth="10"
-          strokeLinecap={incomePct > 0 && incomePct < 1 ? 'butt' : 'round'}
-          className={`stroke-emerald-500 transition-all ${settled ? 'duration-300' : 'duration-700 ease-out'}`}
-          strokeDasharray={`${dashLength} ${circumference}`}
-        />
-      </svg>
+      <div className="relative shrink-0" style={{ width: 88, height: 88 }}>
+        <svg width="88" height="88" viewBox="0 0 88 88" className="-rotate-90">
+          <defs>
+            <linearGradient id={incomeGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#34d399" />
+              <stop offset="100%" stopColor="#059669" />
+            </linearGradient>
+            <linearGradient id={outgoingGradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#fb7185" />
+              <stop offset="100%" stopColor="#e11d48" />
+            </linearGradient>
+          </defs>
+          <circle cx="44" cy="44" r={r} fill="none" strokeWidth="12" stroke={`url(#${outgoingGradientId})`} />
+          <circle
+            cx="44"
+            cy="44"
+            r={r}
+            fill="none"
+            strokeWidth="12"
+            strokeLinecap={incomePct > 0 && incomePct < 1 ? 'butt' : 'round'}
+            stroke={`url(#${incomeGradientId})`}
+            className={`transition-all ${durationClass}`}
+            strokeDasharray={`${dashLength} ${circumference}`}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+          <span
+            className={`text-sm font-bold tabular-nums transition-opacity ${durationClass} ${grown ? 'opacity-100' : 'opacity-0'} ${
+              net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+            }`}
+          >
+            {net >= 0 ? '+' : '−'}
+            {compactCurrency.format(Math.abs(net))}
+          </span>
+          <span className="text-[9px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+            Net
+          </span>
+        </div>
+      </div>
 
       <div className="flex flex-1 flex-col gap-1.5">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
