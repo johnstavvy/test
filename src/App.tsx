@@ -1,5 +1,5 @@
 import { useEffect, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
-import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import logo from './assets/logo.png'
 import Home from './pages/Home'
 import Expenses from './pages/Expenses'
@@ -168,6 +168,7 @@ export default function App() {
               <Route path="/expense/:id" element={<ExpenseDetail />} />
               <Route path="/budget" element={<Budget />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
         </main>

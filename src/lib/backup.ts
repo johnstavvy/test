@@ -1,7 +1,10 @@
 import { db, type Bill, type Expense, type Income } from '../db'
 import { getPeopleNames, setPersonName } from './people'
+import { getCustomRules, setCustomRules, type CategoryRule } from './customCategories'
+import { getStoredNavOrder, setStoredNavOrder } from './navOrder'
+import { getStoredTheme, setStoredTheme } from './theme'
 
-const BACKUP_VERSION = 1
+const BACKUP_VERSION = 2
 
 export interface BackupData {
   version: number
@@ -10,6 +13,11 @@ export interface BackupData {
   bills: Bill[]
   incomes: Income[]
   people: [string, string]
+  // Added in v2 — previously these localStorage-only settings (in particular,
+  // learned category rules) silently vanished when restoring onto a new device.
+  customCategoryRules?: CategoryRule[]
+  navOrder?: string[]
+  theme?: 'light' | 'dark'
 }
 
 export async function exportData(): Promise<BackupData> {
@@ -25,6 +33,9 @@ export async function exportData(): Promise<BackupData> {
     bills,
     incomes,
     people: getPeopleNames(),
+    customCategoryRules: getCustomRules(),
+    navOrder: getStoredNavOrder(),
+    theme: getStoredTheme(),
   }
 }
 
@@ -78,4 +89,7 @@ export async function restoreBackup(data: BackupData) {
     setPersonName(0, data.people[0])
     setPersonName(1, data.people[1])
   }
+  if (data.customCategoryRules) setCustomRules(data.customCategoryRules)
+  if (data.navOrder) setStoredNavOrder(data.navOrder)
+  if (data.theme) setStoredTheme(data.theme)
 }

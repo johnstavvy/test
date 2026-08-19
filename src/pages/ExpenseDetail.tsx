@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { CATEGORIES, db, type Category, type Expense } from '../db'
 import { deleteExpense, updateExpense } from '../lib/expenses'
+import { guessCategory } from '../lib/categorize'
+import { addCustomRule } from '../lib/customCategories'
 import { useToast } from '../lib/toast'
 import { addToTrash, removeFromTrash } from '../lib/trash'
 
@@ -11,6 +13,7 @@ export default function ExpenseDetail() {
   const toast = useToast()
   const [expense, setExpense] = useState<Expense | null>(null)
   const [saving, setSaving] = useState(false)
+  const [rememberCategory, setRememberCategory] = useState(true)
 
   useEffect(() => {
     if (!id) return
@@ -25,6 +28,11 @@ export default function ExpenseDetail() {
     setExpense((prev) => (prev ? { ...prev, [key]: value } : prev))
   }
 
+  // Only offer to teach a rule when the current category diverges from what the
+  // scanner would guess for this merchant — i.e. exactly when a correction is
+  // happening, so the prompt doesn't nag when the category was already right.
+  const showTeachRule = expense.merchant.trim() !== '' && expense.category !== guessCategory(expense.merchant)
+
   async function handleSave() {
     if (!expense) return
     // Blur before navigating away so iOS Safari doesn't stay zoomed on the
@@ -37,6 +45,7 @@ export default function ExpenseDetail() {
       total: expense.total,
       category: expense.category,
     })
+    if (showTeachRule && rememberCategory) addCustomRule(expense.merchant, expense.category)
     navigate('/expenses')
     toast.show({ message: `Saved "${expense.merchant}"` })
   }
@@ -116,6 +125,21 @@ export default function ExpenseDetail() {
           ))}
         </select>
       </label>
+
+      {showTeachRule && (
+        <label className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
+          <input
+            type="checkbox"
+            checked={rememberCategory}
+            onChange={(e) => setRememberCategory(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
+          />
+          <span>
+            Remember "{expense.merchant.trim()}" as <span className="font-medium">{expense.category}</span> for next
+            time
+          </span>
+        </label>
+      )}
 
       {expense.rawText && (
         <details className="text-sm text-slate-500 dark:text-slate-400">

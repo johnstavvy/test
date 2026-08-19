@@ -7,19 +7,22 @@ import { ThemeProvider } from './lib/theme.tsx'
 import { NavOrderProvider } from './lib/navOrder.tsx'
 import { ToastProvider } from './lib/toast.tsx'
 import { ConfirmProvider } from './lib/confirm.tsx'
+import { ErrorBoundary } from './lib/ErrorBoundary.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ThemeProvider>
-      <NavOrderProvider>
-        <ToastProvider>
-          <ConfirmProvider>
-            <BrowserRouter basename="/test">
-              <App />
-            </BrowserRouter>
-          </ConfirmProvider>
-        </ToastProvider>
-      </NavOrderProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <NavOrderProvider>
+          <ToastProvider>
+            <ConfirmProvider>
+              <BrowserRouter basename="/test">
+                <App />
+              </BrowserRouter>
+            </ConfirmProvider>
+          </ToastProvider>
+        </NavOrderProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )

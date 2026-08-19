@@ -30,8 +30,14 @@ const BILL_CATEGORY_COLORS: Record<string, string> = {
   Internet: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-400',
   Subscription: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400',
   Insurance: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+  'Car Payment': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400',
+  'Auto Insurance': 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400',
+  Fuel: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+  Maintenance: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400',
   Other: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
 }
+
+const VEHICLE_CATEGORIES: BillCategory[] = ['Car Payment', 'Auto Insurance', 'Fuel', 'Maintenance']
 
 const inputClass =
   'rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100'
@@ -85,7 +91,7 @@ function emptyBillDraft(category: BillCategory = 'Other', person: 1 | 2 = 1): Bi
   return { name: '', category, amount: 0, dueDay: 1, person, paymentSource: '', recurring: true, notes: '' }
 }
 
-type BillGroupKey = 'home' | 'subscriptions'
+type BillGroupKey = 'home' | 'vehicles' | 'subscriptions'
 
 const BILL_GROUPS: {
   key: BillGroupKey
@@ -98,10 +104,18 @@ const BILL_GROUPS: {
   {
     key: 'home',
     label: 'Home Payments',
-    match: (category) => category !== 'Subscription',
+    match: (category) => category !== 'Subscription' && !VEHICLE_CATEGORIES.includes(category),
     defaultCategory: 'Mortgage/Rent',
     emptyIcon: '🏠',
     emptyText: 'No household bills yet. Add your mortgage, utilities, or insurance.',
+  },
+  {
+    key: 'vehicles',
+    label: 'Vehicles',
+    match: (category) => VEHICLE_CATEGORIES.includes(category),
+    defaultCategory: 'Car Payment',
+    emptyIcon: '🚗',
+    emptyText: 'No vehicle bills yet. Add a car payment, insurance, fuel, or maintenance.',
   },
   {
     key: 'subscriptions',
@@ -382,7 +396,7 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
   const matches = (name: string) => !q || name.toLowerCase().includes(q)
 
   const grouped = useMemo(() => {
-    const groups: Record<BillGroupKey, Bill[]> = { home: [], subscriptions: [] }
+    const groups: Record<BillGroupKey, Bill[]> = { home: [], vehicles: [], subscriptions: [] }
     for (const bill of bills) {
       const group = BILL_GROUPS.find((g) => g.match(bill.category)) ?? BILL_GROUPS[0]
       groups[group.key].push(bill)

@@ -19,16 +19,27 @@ const DATE_PATTERNS: RegExp[] = [
   /\b(\d{1,2})-(\d{1,2})-(\d{2,4})\b/, // mm-dd-yyyy
 ]
 
+// Rejects calendar-impossible dates (month 13, Feb 30, ...) that a single OCR
+// misread digit can otherwise produce — round-tripping through Date() catches
+// day-of-month overflow (e.g. Date(2026, 1, 30) silently becomes Mar 2).
+function isValidCalendarDate(y: number, mo: number, d: number): boolean {
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return false
+  const check = new Date(y, mo - 1, d)
+  return check.getFullYear() === y && check.getMonth() === mo - 1 && check.getDate() === d
+}
+
 function toIsoDate(raw: string): string | null {
   for (const pattern of DATE_PATTERNS) {
     const m = raw.match(pattern)
     if (!m) continue
     if (pattern === DATE_PATTERNS[0]) {
       const [, y, mo, d] = m
+      if (!isValidCalendarDate(Number(y), Number(mo), Number(d))) continue
       return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`
     }
     let [, a, b, y] = m
     if (y.length === 2) y = `20${y}`
+    if (!isValidCalendarDate(Number(y), Number(a), Number(b))) continue
     const mo = a.padStart(2, '0')
     const d = b.padStart(2, '0')
     return `${y}-${mo}-${d}`

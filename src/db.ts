@@ -33,6 +33,10 @@ export const BILL_CATEGORIES = [
   'Internet',
   'Subscription',
   'Insurance',
+  'Car Payment',
+  'Auto Insurance',
+  'Fuel',
+  'Maintenance',
   'Other',
 ] as const
 

@@ -10,7 +10,18 @@ function getInitialTheme(): Theme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-const ThemeContext = createContext<{ theme: Theme; toggleTheme: () => void } | null>(null)
+// Plain (non-hook) accessors for backup export/import, which run outside React.
+export function getStoredTheme(): Theme {
+  return getInitialTheme()
+}
+
+export function setStoredTheme(theme: unknown) {
+  if (theme === 'light' || theme === 'dark') localStorage.setItem(STORAGE_KEY, theme)
+}
+
+const ThemeContext = createContext<{ theme: Theme; toggleTheme: () => void; setTheme: (theme: Theme) => void } | null>(
+  null,
+)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(getInitialTheme)
@@ -24,7 +35,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))
   }
 
-  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>
+  return <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>{children}</ThemeContext.Provider>
 }
 
 export function useTheme() {

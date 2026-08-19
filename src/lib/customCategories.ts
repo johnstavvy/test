@@ -30,6 +30,12 @@ function saveRules(rules: CategoryRule[]) {
   localStorage.setItem(KEY, JSON.stringify(rules))
 }
 
+// Wholesale replace, used by backup restore — unlike addCustomRule/removeCustomRule,
+// which mutate the existing list, this trusts the caller's list as the full set.
+export function setCustomRules(rules: CategoryRule[]) {
+  saveRules(rules)
+}
+
 export function addCustomRule(keyword: string, category: Category): CategoryRule[] {
   const trimmed = keyword.trim()
   if (!trimmed) return getCustomRules()
@@ -56,5 +62,11 @@ export function useCustomRules() {
     setRules(removeCustomRule(keyword))
   }
 
-  return { rules, add, remove }
+  // Re-reads from localStorage — needed after something outside this hook's own
+  // add/remove calls (e.g. a backup restore) writes the rules directly.
+  function refresh() {
+    setRules(getCustomRules())
+  }
+
+  return { rules, add, remove, refresh }
 }

@@ -88,11 +88,11 @@ function TrashRow({
 }
 
 export default function Settings() {
-  const { theme, toggleTheme } = useTheme()
-  const { resetOrder } = useNavOrder()
+  const { theme, toggleTheme, setTheme } = useTheme()
+  const { resetOrder, setOrder } = useNavOrder()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importStatus, setImportStatus] = useState<string | null>(null)
-  const { rules, add, remove } = useCustomRules()
+  const { rules, add, remove, refresh: refreshRules } = useCustomRules()
   const [ruleKeyword, setRuleKeyword] = useState('')
   const [ruleCategory, setRuleCategory] = useState<Category>(CATEGORIES[0])
   const confirmDialog = useConfirm()
@@ -157,12 +157,18 @@ export default function Settings() {
 
       const previous = await exportData()
       await restoreBackup(data)
+      if (data.navOrder) setOrder(data.navOrder)
+      if (data.theme) setTheme(data.theme)
+      refreshRules()
       setImportStatus(`Imported ${summary}.`)
       toast.show({
         message: 'Backup imported',
         actionLabel: 'Undo',
         onAction: async () => {
           await restoreBackup(previous)
+          if (previous.navOrder) setOrder(previous.navOrder)
+          if (previous.theme) setTheme(previous.theme)
+          refreshRules()
           setImportStatus(null)
         },
       })

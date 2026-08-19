@@ -5,6 +5,7 @@ import { fileToResizedDataUrl, videoFrameToResizedDataUrl } from '../lib/image'
 import { recognizeReceiptText } from '../lib/ocr'
 import { parseReceiptText } from '../lib/parseReceipt'
 import { guessCategory } from '../lib/categorize'
+import { addCustomRule } from '../lib/customCategories'
 import { addExpense } from '../lib/expenses'
 import { useToast } from '../lib/toast'
 import { isoDate } from '../lib/week'
@@ -44,6 +45,11 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
   // user picked one explicitly, or OCR already guessed from the full receipt text
   // (a better signal than the merchant name alone, so don't let it get overwritten).
   const [categoryTouched, setCategoryTouched] = useState(false)
+  const [rememberCategory, setRememberCategory] = useState(true)
+  // Only offer to teach a rule when the chosen category diverges from what the
+  // scanner would already guess for this merchant — i.e. exactly when a correction
+  // is happening, so the prompt doesn't nag on every already-correct guess.
+  const showTeachRule = merchant.trim() !== '' && category !== guessCategory(merchant)
 
   useEffect(() => {
     if (stage === 'camera' && videoRef.current && streamRef.current) {
@@ -158,6 +164,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
     setTotal('')
     setCategory('Other')
     setCategoryTouched(false)
+    setRememberCategory(true)
     setStage('review')
   }
 
@@ -177,6 +184,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
       rawText,
       imageDataUrl,
     })
+    if (showTeachRule && rememberCategory) addCustomRule(savedMerchant, category)
     if (onSaved) {
       onSaved()
     } else {
@@ -194,6 +202,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
     setTotal('')
     setCategory('Other')
     setCategoryTouched(false)
+    setRememberCategory(true)
     setError(null)
   }
 
@@ -374,6 +383,20 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
           ))}
         </select>
       </label>
+
+      {showTeachRule && (
+        <label className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
+          <input
+            type="checkbox"
+            checked={rememberCategory}
+            onChange={(e) => setRememberCategory(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-accent"
+          />
+          <span>
+            Remember "{merchant.trim()}" as <span className="font-medium">{category}</span> for next time
+          </span>
+        </label>
+      )}
 
       <div className="mt-2 flex gap-3">
         <button

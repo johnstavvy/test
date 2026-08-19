@@ -8,7 +8,19 @@ export function removeFromTrash(id: number) {
   return db.trash.delete(id)
 }
 
-export function listTrash() {
+const MAX_TRASH_AGE_MS = 30 * 24 * 60 * 60 * 1000
+
+// Deleted expenses carry their full receipt photo (imageDataUrl), so trash left
+// unemptied can quietly grow IndexedDB usage forever — purge anything past 30
+// days whenever the trash is read, rather than requiring a manual "Delete all".
+async function purgeExpiredTrash() {
+  const cutoff = Date.now() - MAX_TRASH_AGE_MS
+  const expiredIds = await db.trash.where('deletedAt').below(cutoff).primaryKeys()
+  if (expiredIds.length) await db.trash.bulkDelete(expiredIds)
+}
+
+export async function listTrash() {
+  await purgeExpiredTrash()
   return db.trash.orderBy('deletedAt').reverse().toArray()
 }
 
