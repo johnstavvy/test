@@ -6,6 +6,7 @@ import { listBills, totalMonthlyBills } from '../lib/bills'
 import { listIncomes, totalMonthlyIncome } from '../lib/income'
 import { currentMonthKey, currentWeekDays, dateFromIso, isoDate } from '../lib/week'
 import { useGrowIn } from '../lib/useGrowIn'
+import { IconAlertTriangle, IconChevronDown } from '../lib/icons'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -177,7 +178,7 @@ function SpendingTrend({
         <p
           className={`flex items-center gap-1.5 border-t border-slate-100 pt-1.5 text-xs font-medium dark:border-slate-700 ${overBudget ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}`}
         >
-          <span aria-hidden="true">{overBudget ? '⚠️' : '⏳'}</span>
+          <IconAlertTriangle className="h-3.5 w-3.5 shrink-0" />
           {overBudget
             ? "You've spent past this month's discretionary budget."
             : `You've used ${Math.round(budgetPct * 100)}% of this month's discretionary budget.`}
@@ -417,11 +418,9 @@ export default function Home() {
           className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800"
         >
           <span className="font-medium text-slate-900 dark:text-slate-100">Recent Expenses</span>
-          <span
-            className={`text-slate-400 transition-transform dark:text-slate-500 ${recentOpen ? 'rotate-180' : ''}`}
-          >
-            ⌄
-          </span>
+          <IconChevronDown
+            className={`h-4 w-4 text-slate-400 transition-transform dark:text-slate-500 ${recentOpen ? 'rotate-180' : ''}`}
+          />
         </button>
 
         {recentOpen && (

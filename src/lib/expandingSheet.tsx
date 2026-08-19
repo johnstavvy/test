@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { IconClose } from './icons'
 
 const DURATION = 320
 const EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'
@@ -128,7 +129,7 @@ export function ExpandingSheet({
               aria-label="Close"
               className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-transform duration-150 active:scale-90 dark:bg-slate-700 dark:text-slate-300"
             >
-              ✕
+              <IconClose className="h-4 w-4" />
             </button>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto bg-white dark:bg-slate-800">{children}</div>

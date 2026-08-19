@@ -7,6 +7,7 @@ import { parseReceiptText } from '../lib/parseReceipt'
 import { guessCategory } from '../lib/categorize'
 import { addCustomRule } from '../lib/customCategories'
 import { addExpense } from '../lib/expenses'
+import { IconClose, IconFlash, IconReceipt } from '../lib/icons'
 import { useToast } from '../lib/toast'
 import { isoDate } from '../lib/week'
 
@@ -209,8 +210,8 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
   if (stage === 'idle') {
     return (
       <div className="flex flex-col items-center justify-center gap-6 px-6 py-16 text-center lg:mx-auto lg:max-w-xl">
-        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-accent/10 text-4xl dark:bg-accent/15">
-          🧾
+        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-accent/10 dark:bg-accent/15">
+          <IconReceipt className="h-10 w-10 text-accent" />
         </div>
         <div>
           <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Scan a receipt</h1>
@@ -270,19 +271,19 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
           <button
             onClick={cancelCamera}
             aria-label="Cancel"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-xl text-white backdrop-blur transition-transform duration-150 active:scale-90"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur transition-transform duration-150 active:scale-90"
           >
-            ✕
+            <IconClose className="h-5 w-5" />
           </button>
           {torchSupported && (
             <button
               onClick={toggleTorch}
               aria-label={torchOn ? 'Turn flash off' : 'Turn flash on'}
-              className={`flex h-10 w-10 items-center justify-center rounded-full text-xl backdrop-blur transition-all duration-150 active:scale-90 ${
+              className={`flex h-10 w-10 items-center justify-center rounded-full backdrop-blur transition-all duration-150 active:scale-90 ${
                 torchOn ? 'bg-amber-400 text-black' : 'bg-black/50 text-white'
               }`}
             >
-              ⚡
+              <IconFlash className="h-5 w-5" />
             </button>
           )}
         </div>

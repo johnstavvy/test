@@ -6,6 +6,7 @@ import { listBills, totalMonthlyBills } from '../lib/bills'
 import { listIncomes, totalMonthlyIncome } from '../lib/income'
 import { currentMonthKey } from '../lib/week'
 import { useGrowIn } from '../lib/useGrowIn'
+import { IconAlertTriangle, IconChart } from '../lib/icons'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -54,7 +55,7 @@ function MonthlyBudget({ income, bills, spent }: { income: number; bills: number
         <p
           className={`mt-2 flex items-center gap-1.5 text-xs font-medium ${over ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}`}
         >
-          <span aria-hidden="true">{over ? '⚠️' : '⏳'}</span>
+          <IconAlertTriangle className="h-3.5 w-3.5 shrink-0" />
           {over
             ? "You've spent past this month's discretionary budget."
             : `You've used ${Math.round(pct * 100)}% of this month's discretionary budget.`}
@@ -127,7 +128,7 @@ export default function Summary() {
       <div className="flex flex-col gap-6 px-4 py-6">
         <MonthlyBudget income={monthlyIncomeTotal} bills={monthlyBillsTotal} spent={monthSpent} />
         <div className="flex flex-col items-center gap-3 py-10 text-center text-slate-500 dark:text-slate-400">
-          <div className="text-4xl">📊</div>
+          <IconChart className="h-10 w-10 text-slate-300 dark:text-slate-600" />
           <p>Add a few expenses to see totals here.</p>
         </div>
       </div>

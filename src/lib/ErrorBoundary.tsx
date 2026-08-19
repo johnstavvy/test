@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react'
+import { IconAlertTriangle } from './icons'
 
 interface Props {
   children: ReactNode
@@ -28,8 +29,8 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.error) {
       return (
         <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 text-3xl dark:bg-rose-900/30">
-            ⚠️
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-900/30">
+            <IconAlertTriangle className="h-8 w-8 text-rose-600 dark:text-rose-400" />
           </div>
           <div>
             <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Something went wrong</h1>

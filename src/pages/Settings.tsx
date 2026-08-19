@@ -8,6 +8,7 @@ import { useToast } from '../lib/toast'
 import { useSwipeToDelete } from '../lib/useSwipeToDelete'
 import { clearTrash, listTrash, removeFromTrash, restoreFromTrash } from '../lib/trash'
 import { CATEGORIES, type Bill, type Category, type Expense, type Income, type TrashEntry } from '../db'
+import { IconClose } from '../lib/icons'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -307,7 +308,7 @@ export default function Settings() {
                   className="shrink-0 pl-3 text-red-600 dark:text-red-400"
                   aria-label={`Remove rule for ${r.keyword}`}
                 >
-                  ✕
+                  <IconClose className="h-3.5 w-3.5" />
                 </button>
               </li>
             ))}

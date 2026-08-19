@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { CATEGORIES, db, type Expense } from '../db'
 import { deleteExpense, listExpenses } from '../lib/expenses'
 import { dateFromIso, isoDate, mondayOf } from '../lib/week'
-import { IconScan } from '../lib/icons'
+import { IconChevronDown, IconReceipt, IconScan, IconSearch } from '../lib/icons'
 import { useSwipeToDelete } from '../lib/useSwipeToDelete'
 import { useToast } from '../lib/toast'
 import { addToTrash, removeFromTrash } from '../lib/trash'
@@ -106,11 +106,9 @@ function WeekGroup({
         </div>
         <div className="flex items-center gap-2">
           <span className="font-semibold text-slate-900 dark:text-slate-100">{currency.format(total)}</span>
-          <span
-            className={`text-slate-400 transition-transform dark:text-slate-500 ${isOpen ? 'rotate-180' : ''}`}
-          >
-            ⌄
-          </span>
+          <IconChevronDown
+            className={`h-4 w-4 text-slate-400 transition-transform dark:text-slate-500 ${isOpen ? 'rotate-180' : ''}`}
+          />
         </div>
       </button>
 
@@ -250,14 +248,14 @@ export default function Expenses() {
 
         {expenses !== null && expenses.length === 0 && (
           <div className="mt-10 flex flex-col items-center gap-3 text-center text-slate-500 dark:text-slate-400">
-            <div className="text-4xl">🧾</div>
+            <IconReceipt className="h-10 w-10 text-slate-300 dark:text-slate-600" />
             <p>No expenses yet. Tap the scan button to add your first receipt.</p>
           </div>
         )}
 
         {expenses !== null && expenses.length > 0 && filtered !== null && filtered.length === 0 && (
           <div className="mt-10 flex flex-col items-center gap-3 text-center text-slate-500 dark:text-slate-400">
-            <div className="text-4xl">🔍</div>
+            <IconSearch className="h-10 w-10 text-slate-300 dark:text-slate-600" />
             <p>No expenses match your search.</p>
           </div>
         )}

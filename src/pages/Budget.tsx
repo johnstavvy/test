@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ComponentType } from 'react'
 import { BILL_CATEGORIES, db, type Bill, type BillCategory, type Expense, type Income } from '../db'
 import {
   addBill,
@@ -19,6 +19,7 @@ import { isRecurring } from '../lib/recurring'
 import { useToast } from '../lib/toast'
 import { addToTrash, removeFromTrash } from '../lib/trash'
 import { useGrowIn } from '../lib/useGrowIn'
+import { IconCar, IconCheck, IconHome, IconPencil, IconTv } from '../lib/icons'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -98,7 +99,7 @@ const BILL_GROUPS: {
   label: string
   match: (category: BillCategory) => boolean
   defaultCategory: BillCategory
-  emptyIcon: string
+  emptyIcon: ComponentType<{ className?: string }>
   emptyText: string
 }[] = [
   {
@@ -106,7 +107,7 @@ const BILL_GROUPS: {
     label: 'Home Payments',
     match: (category) => category !== 'Subscription' && !VEHICLE_CATEGORIES.includes(category),
     defaultCategory: 'Mortgage/Rent',
-    emptyIcon: '🏠',
+    emptyIcon: IconHome,
     emptyText: 'No household bills yet. Add your mortgage, utilities, or insurance.',
   },
   {
@@ -114,7 +115,7 @@ const BILL_GROUPS: {
     label: 'Vehicles',
     match: (category) => VEHICLE_CATEGORIES.includes(category),
     defaultCategory: 'Car Payment',
-    emptyIcon: '🚗',
+    emptyIcon: IconCar,
     emptyText: 'No vehicle bills yet. Add a car payment, insurance, fuel, or maintenance.',
   },
   {
@@ -122,7 +123,7 @@ const BILL_GROUPS: {
     label: 'Subscriptions',
     match: (category) => category === 'Subscription',
     defaultCategory: 'Subscription',
-    emptyIcon: '📺',
+    emptyIcon: IconTv,
     emptyText: 'No subscriptions yet. Add streaming, software, or memberships.',
   },
 ]
@@ -293,7 +294,7 @@ function TagBadge({ children, compact }: { children: string; compact?: boolean }
 }
 
 function PaidToggle({ paid, onToggle, compact }: { paid: boolean; onToggle: () => void; compact?: boolean }) {
-  const size = compact ? 'h-5 w-5 text-[11px]' : 'h-6 w-6 text-sm'
+  const size = compact ? 'h-5 w-5' : 'h-6 w-6'
   return (
     <button
       onClick={(e) => {
@@ -305,10 +306,10 @@ function PaidToggle({ paid, onToggle, compact }: { paid: boolean; onToggle: () =
       className={`flex shrink-0 items-center justify-center rounded-full border transition-colors ${size} ${
         paid
           ? 'border-emerald-500 bg-emerald-500 text-white'
-          : 'border-slate-300 text-transparent active:bg-slate-100 dark:border-slate-600 dark:active:bg-slate-700'
+          : 'border-slate-300 active:bg-slate-100 dark:border-slate-600 dark:active:bg-slate-700'
       }`}
     >
-      ✓
+      {paid && <IconCheck className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />}
     </button>
   )
 }
@@ -490,7 +491,7 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
 
               {list.length === 0 && !isAddingHere && (
                 <div className="flex flex-col items-center gap-2 px-4 py-8 text-center text-slate-500 dark:text-slate-400">
-                  <div className="text-3xl">{group.emptyIcon}</div>
+                  <group.emptyIcon className="h-8 w-8 text-slate-300 dark:text-slate-600" />
                   <p className="text-sm">{group.emptyText}</p>
                 </div>
               )}
@@ -588,7 +589,7 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
 
             {list.length === 0 && !isAddingHere && (
               <div className="flex flex-col items-center gap-2 px-4 py-8 text-center text-slate-500 dark:text-slate-400">
-                <div className="text-3xl">{group.emptyIcon}</div>
+                <group.emptyIcon className="h-8 w-8 text-slate-300 dark:text-slate-600" />
                 <p className="text-sm">{group.emptyText}</p>
               </div>
             )}
@@ -836,7 +837,7 @@ function PersonHeader({
       className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300"
     >
       {name}
-      <span className="text-xs text-slate-400 dark:text-slate-500">✎</span>
+      <IconPencil className="h-3 w-3 text-slate-400 dark:text-slate-500" />
       <span className="font-normal text-slate-400 dark:text-slate-500">· {currency.format(subtotal)}</span>
     </button>
   )
