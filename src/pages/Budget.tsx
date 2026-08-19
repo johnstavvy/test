@@ -4,9 +4,11 @@ import {
   addBill,
   daysUntilDue,
   deleteBill,
+  dueLabel,
   effectiveAmount,
   isBillPaidThisMonth,
   listBills,
+  ordinal,
   setBillPaidThisMonth,
   totalMonthlyBills,
   updateBill,
@@ -43,23 +45,6 @@ const VEHICLE_CATEGORIES: BillCategory[] = ['Car Payment', 'Auto Insurance', 'Fu
 const inputClass =
   'rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100'
 const labelClass = 'flex flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300'
-
-// Formats a day-of-month as "1st", "2nd", "3rd", "4th", ... "11th", "21st", etc.
-function ordinal(n: number): string {
-  const j = n % 10
-  const k = n % 100
-  if (j === 1 && k !== 11) return `${n}st`
-  if (j === 2 && k !== 12) return `${n}nd`
-  if (j === 3 && k !== 13) return `${n}rd`
-  return `${n}th`
-}
-
-function dueLabel(days: number, dueDay: number) {
-  const day = ordinal(dueDay)
-  if (days === 0) return `Due today · the ${day}`
-  if (days === 1) return `Due tomorrow · the ${day}`
-  return `Due the ${day} · in ${days}d`
-}
 
 // Which of the two household members an entry belongs to; missing/legacy rows default to person 1.
 function personOf(entity: { person?: 1 | 2 }): 1 | 2 {

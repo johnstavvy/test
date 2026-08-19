@@ -75,3 +75,20 @@ export function daysUntilDue(dueDay: number, today = new Date()) {
 
   return Math.round((next.getTime() - start.getTime()) / 86_400_000)
 }
+
+// Formats a day-of-month as "1st", "2nd", "3rd", "4th", ... "11th", "21st", etc.
+export function ordinal(n: number): string {
+  const j = n % 10
+  const k = n % 100
+  if (j === 1 && k !== 11) return `${n}st`
+  if (j === 2 && k !== 12) return `${n}nd`
+  if (j === 3 && k !== 13) return `${n}rd`
+  return `${n}th`
+}
+
+export function dueLabel(days: number, dueDay: number) {
+  const day = ordinal(dueDay)
+  if (days === 0) return `Due today · the ${day}`
+  if (days === 1) return `Due tomorrow · the ${day}`
+  return `Due the ${day} · in ${days}d`
+}

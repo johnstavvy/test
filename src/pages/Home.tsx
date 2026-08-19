@@ -2,11 +2,11 @@ import { useEffect, useId, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Bill, Expense, Income } from '../db'
 import { listExpenses } from '../lib/expenses'
-import { listBills, totalMonthlyBills } from '../lib/bills'
+import { daysUntilDue, dueLabel, effectiveAmount, isBillPaidThisMonth, listBills, totalMonthlyBills } from '../lib/bills'
 import { listIncomes, totalMonthlyIncome } from '../lib/income'
 import { currentMonthKey, currentWeekDays, dateFromIso, isoDate } from '../lib/week'
 import { useGrowIn } from '../lib/useGrowIn'
-import { IconAlertTriangle, IconChevronDown } from '../lib/icons'
+import { IconAlertTriangle, IconChevronDown, IconWallet } from '../lib/icons'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -188,6 +188,58 @@ function SpendingTrend({
   )
 }
 
+// Bills due within a week and not yet marked paid this month — deliberately hidden
+// entirely (not an empty state) when nothing needs attention, so Home stays glanceable.
+function UpcomingBills({ bills }: { bills: Bill[] }) {
+  const upcoming = useMemo(
+    () =>
+      bills
+        .filter((b) => !isBillPaidThisMonth(b))
+        .map((b) => ({ bill: b, days: daysUntilDue(b.dueDay) }))
+        .filter((x) => x.days <= 7)
+        .sort((a, b) => a.days - b.days)
+        .slice(0, 4),
+    [bills],
+  )
+
+  if (upcoming.length === 0) return null
+
+  return (
+    <Link
+      to="/budget"
+      className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800"
+    >
+      <div className="flex items-center justify-between">
+        <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+          <IconWallet className="h-3.5 w-3.5" />
+          Upcoming Bills
+        </p>
+        <span className="text-xs text-accent">View all →</span>
+      </div>
+      <div className="flex flex-col divide-y divide-slate-100 dark:divide-slate-700">
+        {upcoming.map(({ bill, days }) => {
+          const soon = days <= 3
+          return (
+            <div key={bill.id} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
+              <div className="flex min-w-0 flex-col">
+                <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
+                <span
+                  className={`text-xs ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}
+                >
+                  {dueLabel(days, bill.dueDay)}
+                </span>
+              </div>
+              <p className="shrink-0 font-semibold text-slate-900 dark:text-slate-100">
+                {currency.format(effectiveAmount(bill))}
+              </p>
+            </div>
+          )
+        })}
+      </div>
+    </Link>
+  )
+}
+
 function shortLabel(iso: string) {
   return dateFromIso(iso).toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2)
 }
@@ -324,6 +376,8 @@ export default function Home() {
           daysInMonth={daysInMonth}
           todayDayOfMonth={todayDayOfMonth}
         />
+
+        {bills !== null && <UpcomingBills bills={bills} />}
 
         {expenses !== null && expenses.length > 0 && (
           <input
