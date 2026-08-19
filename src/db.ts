@@ -50,6 +50,7 @@ export interface Bill {
   notes: string
   createdAt: number
   updatedAt?: number // last time the amount was edited; used to auto-zero stale non-recurring bills after their due day
+  paidMonths?: string[] // "yyyy-mm" keys the user has marked this bill paid for; resets implicitly each new month
 }
 
 export interface Income {

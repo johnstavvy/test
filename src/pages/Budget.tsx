@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { BILL_CATEGORIES, db, type Bill, type BillCategory, type Expense, type Income } from '../db'
-import { addBill, daysUntilDue, deleteBill, effectiveAmount, listBills, totalMonthlyBills, updateBill } from '../lib/bills'
+import {
+  addBill,
+  daysUntilDue,
+  deleteBill,
+  effectiveAmount,
+  isBillPaidThisMonth,
+  listBills,
+  setBillPaidThisMonth,
+  totalMonthlyBills,
+  updateBill,
+} from '../lib/bills'
 import { addIncome, deleteIncome, listIncomes, totalMonthlyIncome, updateIncome } from '../lib/income'
 import { listExpenses } from '../lib/expenses'
 import { currentMonthKey } from '../lib/week'
@@ -268,25 +278,60 @@ function TagBadge({ children, compact }: { children: string; compact?: boolean }
   )
 }
 
-function BillListItem({ bill, compact, onClick }: { bill: Bill; compact?: boolean; onClick: () => void }) {
+function PaidToggle({ paid, onToggle, compact }: { paid: boolean; onToggle: () => void; compact?: boolean }) {
+  const size = compact ? 'h-5 w-5 text-[11px]' : 'h-6 w-6 text-sm'
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation()
+        onToggle()
+      }}
+      aria-pressed={paid}
+      aria-label={paid ? 'Mark unpaid' : 'Mark paid'}
+      className={`flex shrink-0 items-center justify-center rounded-full border transition-colors ${size} ${
+        paid
+          ? 'border-emerald-500 bg-emerald-500 text-white'
+          : 'border-slate-300 text-transparent active:bg-slate-100 dark:border-slate-600 dark:active:bg-slate-700'
+      }`}
+    >
+      ✓
+    </button>
+  )
+}
+
+function BillListItem({
+  bill,
+  compact,
+  onClick,
+  onTogglePaid,
+}: {
+  bill: Bill
+  compact?: boolean
+  onClick: () => void
+  onTogglePaid: () => void
+}) {
   const days = daysUntilDue(bill.dueDay)
   const soon = days <= 3
   const amount = effectiveAmount(bill)
   const needsUpdate = amount === 0 && bill.amount !== 0
+  const paid = isBillPaidThisMonth(bill)
 
   if (compact) {
     return (
       <button
         onClick={onClick}
-        className="flex w-full flex-col items-start gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700"
+        className={`flex w-full flex-col items-start gap-1 rounded-xl border bg-white px-3 py-2 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:bg-slate-800 dark:active:bg-slate-700 ${paid ? 'border-emerald-200 dark:border-emerald-800' : 'border-slate-200 dark:border-slate-700'}`}
       >
-        <p className="w-full truncate text-sm font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
+        <div className="flex w-full items-start justify-between gap-2">
+          <p className="min-w-0 truncate text-sm font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
+          <PaidToggle paid={paid} onToggle={onTogglePaid} compact />
+        </div>
         <FrequencyBadge recurring={isRecurring(bill)} compact />
         {bill.paymentSource && <TagBadge compact>{bill.paymentSource}</TagBadge>}
         <span
           className={`truncate text-[11px] ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}
         >
-          {dueLabel(days, bill.dueDay)}
+          {paid ? 'Paid this month' : dueLabel(days, bill.dueDay)}
         </span>
         <span
           className={`text-xs font-semibold ${needsUpdate ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-slate-100'}`}
@@ -301,7 +346,7 @@ function BillListItem({ bill, compact, onClick }: { bill: Bill; compact?: boolea
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-sm"
+      className={`flex w-full items-center justify-between rounded-2xl border bg-white px-4 py-3 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-sm ${paid ? 'border-emerald-200 dark:border-emerald-800' : 'border-slate-200 dark:border-slate-700'}`}
     >
       <div className="flex min-w-0 flex-col items-start gap-1">
         <p className="truncate font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
@@ -313,15 +358,16 @@ function BillListItem({ bill, compact, onClick }: { bill: Bill; compact?: boolea
         <FrequencyBadge recurring={isRecurring(bill)} />
         {bill.paymentSource && <TagBadge>{bill.paymentSource}</TagBadge>}
         <span className={`text-xs ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}>
-          {dueLabel(days, bill.dueDay)}
+          {paid ? 'Paid this month' : dueLabel(days, bill.dueDay)}
         </span>
       </div>
-      <p
-        className={`ml-3 shrink-0 font-semibold ${needsUpdate ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-slate-100'}`}
-      >
-        {currency.format(amount)}
-        {needsUpdate && <span className="block text-right text-[11px] font-medium">update</span>}
-      </p>
+      <div className="ml-3 flex shrink-0 flex-col items-end gap-2">
+        <PaidToggle paid={paid} onToggle={onTogglePaid} />
+        <p className={`font-semibold ${needsUpdate ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-slate-100'}`}>
+          {currency.format(amount)}
+          {needsUpdate && <span className="block text-right text-[11px] font-medium">update</span>}
+        </p>
+      </div>
     </button>
   )
 }
@@ -368,6 +414,11 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
         reload()
       },
     })
+  }
+
+  async function handleTogglePaid(bill: Bill) {
+    await setBillPaidThisMonth(bill, !isBillPaidThisMonth(bill))
+    reload()
   }
 
   return (
@@ -470,7 +521,12 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
                         <ul className="flex flex-col gap-2">
                           {visiblePersonList.map((bill) => (
                             <li key={bill.id}>
-                              <BillListItem compact bill={bill} onClick={() => setEditing(bill.id)} />
+                              <BillListItem
+                                compact
+                                bill={bill}
+                                onClick={() => setEditing(bill.id)}
+                                onTogglePaid={() => handleTogglePaid(bill)}
+                              />
                             </li>
                           ))}
                         </ul>
@@ -547,7 +603,7 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
                       onDelete={() => handleDelete(bill)}
                     />
                   ) : (
-                    <BillListItem bill={bill} onClick={() => setEditing(bill.id)} />
+                    <BillListItem bill={bill} onClick={() => setEditing(bill.id)} onTogglePaid={() => handleTogglePaid(bill)} />
                   )}
                 </li>
               ))}

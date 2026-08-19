@@ -4,6 +4,7 @@ import { CATEGORIES, type Category } from '../db'
 import { fileToResizedDataUrl, videoFrameToResizedDataUrl } from '../lib/image'
 import { recognizeReceiptText } from '../lib/ocr'
 import { parseReceiptText } from '../lib/parseReceipt'
+import { guessCategory } from '../lib/categorize'
 import { addExpense } from '../lib/expenses'
 import { useToast } from '../lib/toast'
 import { isoDate } from '../lib/week'
@@ -39,6 +40,10 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
   const [date, setDate] = useState('')
   const [total, setTotal] = useState('')
   const [category, setCategory] = useState<Category>('Other')
+  // Once true, typing in Merchant stops auto-guessing the category — either the
+  // user picked one explicitly, or OCR already guessed from the full receipt text
+  // (a better signal than the merchant name alone, so don't let it get overwritten).
+  const [categoryTouched, setCategoryTouched] = useState(false)
 
   useEffect(() => {
     if (stage === 'camera' && videoRef.current && streamRef.current) {
@@ -130,6 +135,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
       setDate(parsed.date)
       setTotal(parsed.total.toFixed(2))
       setCategory(parsed.category)
+      setCategoryTouched(true)
       setStage('review')
     } catch (err) {
       console.error(err)
@@ -151,6 +157,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
     setDate(todayIso())
     setTotal('')
     setCategory('Other')
+    setCategoryTouched(false)
     setStage('review')
   }
 
@@ -186,6 +193,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
     setDate('')
     setTotal('')
     setCategory('Other')
+    setCategoryTouched(false)
     setError(null)
   }
 
@@ -317,7 +325,11 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
         Merchant
         <input
           value={merchant}
-          onChange={(e) => setMerchant(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value
+            setMerchant(value)
+            if (!imageDataUrl && !categoryTouched) setCategory(guessCategory(value))
+          }}
           className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         />
       </label>
@@ -349,7 +361,10 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
         Category
         <select
           value={category}
-          onChange={(e) => setCategory(e.target.value as Category)}
+          onChange={(e) => {
+            setCategory(e.target.value as Category)
+            setCategoryTouched(true)
+          }}
           className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         >
           {CATEGORIES.map((c) => (

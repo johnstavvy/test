@@ -27,6 +27,7 @@ function MonthlyBudget({ income, bills, spent }: { income: number; bills: number
   const discretionary = income - bills
   const pct = discretionary > 0 ? spent / discretionary : spent > 0 ? 1 : 0
   const over = spent > discretionary
+  const nearingLimit = !over && pct >= 0.85
   const remaining = discretionary - spent
   const widthPct = grown ? Math.min(Math.max(pct * 100, spent > 0 ? 4 : 0), 100) : 0
 
@@ -45,10 +46,20 @@ function MonthlyBudget({ income, bills, spent }: { income: number; bills: number
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
         <div
-          className={`h-full rounded-full transition-all ${settled ? 'duration-300' : 'duration-[1250ms] ease-out'} ${over ? 'bg-rose-500' : 'bg-accent'}`}
+          className={`h-full rounded-full transition-all ${settled ? 'duration-300' : 'duration-[1250ms] ease-out'} ${over ? 'bg-rose-500' : nearingLimit ? 'bg-amber-500' : 'bg-accent'}`}
           style={{ width: `${widthPct}%` }}
         />
       </div>
+      {(over || nearingLimit) && (
+        <p
+          className={`mt-2 flex items-center gap-1.5 text-xs font-medium ${over ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}`}
+        >
+          <span aria-hidden="true">{over ? '⚠️' : '⏳'}</span>
+          {over
+            ? "You've spent past this month's discretionary budget."
+            : `You've used ${Math.round(pct * 100)}% of this month's discretionary budget.`}
+        </p>
+      )}
       <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
         This month's income ({currency.format(income)}) minus fixed bills ({currency.format(bills)}) leaves{' '}
         {currency.format(Math.max(discretionary, 0))} for spending.
@@ -123,7 +134,9 @@ export default function Summary() {
     )
   }
 
-  const byCategory = totalsByCategory(expenses).map((c) => ({ label: c.category, total: c.total }))
+  const monthKey = currentMonthKey()
+  const thisMonthExpenses = expenses.filter((e) => e.date.startsWith(monthKey))
+  const byCategory = totalsByCategory(thisMonthExpenses).map((c) => ({ label: c.category, total: c.total }))
   const byMonth = totalsByMonth(expenses)
     .slice(0, 6)
     .map((m) => ({ label: monthLabel(m.month), total: m.total }))
@@ -135,9 +148,13 @@ export default function Summary() {
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-6">
         <section className="lg:flex-1">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            By Category
+            By Category · This Month
           </h2>
-          <BarList rows={byCategory} />
+          {byCategory.length > 0 ? (
+            <BarList rows={byCategory} />
+          ) : (
+            <p className="text-sm text-slate-400 dark:text-slate-500">No expenses logged this month yet.</p>
+          )}
         </section>
 
         <section className="lg:flex-1">

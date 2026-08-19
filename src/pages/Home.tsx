@@ -53,6 +53,9 @@ function SpendingTrend({
   const spentSoFar = cumulativeSpend[todayDayOfMonth - 1] ?? 0
   const incomeSoFar = cumulativeIncome[cumulativeIncome.length - 1] ?? 0
   const maxY = Math.max(discretionary, spentSoFar, incomeSoFar, 1) * 1.15
+  const budgetPct = discretionary > 0 ? spentSoFar / discretionary : 0
+  const overBudget = discretionary > 0 && spentSoFar > discretionary
+  const nearingBudget = discretionary > 0 && !overBudget && budgetPct >= 0.85
   const xAt = (day: number) => (daysInMonth > 1 ? ((day - 1) / (daysInMonth - 1)) * width : 0)
   const yAt = (value: number) => height - (value / maxY) * height
 
@@ -133,6 +136,7 @@ function SpendingTrend({
               strokeWidth="2"
               strokeLinecap="round"
               strokeOpacity="0.85"
+              strokeDasharray="5 4"
             />
           )}
           {hasLine && (
@@ -169,6 +173,16 @@ function SpendingTrend({
           {currency.format(net)}
         </span>
       </div>
+      {(overBudget || nearingBudget) && (
+        <p
+          className={`flex items-center gap-1.5 border-t border-slate-100 pt-1.5 text-xs font-medium dark:border-slate-700 ${overBudget ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}`}
+        >
+          <span aria-hidden="true">{overBudget ? '⚠️' : '⏳'}</span>
+          {overBudget
+            ? "You've spent past this month's discretionary budget."
+            : `You've used ${Math.round(budgetPct * 100)}% of this month's discretionary budget.`}
+        </p>
+      )}
     </div>
   )
 }

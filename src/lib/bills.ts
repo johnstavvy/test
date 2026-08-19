@@ -43,6 +43,23 @@ export function totalMonthlyBills(bills: Bill[]) {
   return bills.reduce((sum, b) => sum + effectiveAmount(b), 0)
 }
 
+function monthKey(today = new Date()) {
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+}
+
+export function isBillPaidThisMonth(bill: Bill, today = new Date()) {
+  return bill.paidMonths?.includes(monthKey(today)) ?? false
+}
+
+// Toggling paid doesn't touch `amount`/`updatedAt` — it's independent of the
+// auto-zero mechanism above, just a per-month checkmark for household tracking.
+export function setBillPaidThisMonth(bill: Bill, paid: boolean, today = new Date()) {
+  const key = monthKey(today)
+  const months = bill.paidMonths ?? []
+  const next = paid ? (months.includes(key) ? months : [...months, key]) : months.filter((m) => m !== key)
+  return db.bills.update(bill.id, { paidMonths: next })
+}
+
 // Days until the next occurrence of a day-of-month due date, clamped to
 // the last day of shorter months (e.g. dueDay 31 in April -> Apr 30).
 export function daysUntilDue(dueDay: number, today = new Date()) {
