@@ -17,7 +17,7 @@ export interface BackupData {
   // learned category rules) silently vanished when restoring onto a new device.
   customCategoryRules?: CategoryRule[]
   navOrder?: string[]
-  theme?: 'light' | 'dark'
+  theme?: 'light' | 'dark' | 'system'
 }
 
 export async function exportData(): Promise<BackupData> {

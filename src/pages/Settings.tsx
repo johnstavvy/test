@@ -89,7 +89,7 @@ function TrashRow({
 }
 
 export default function Settings() {
-  const { theme, toggleTheme, setTheme } = useTheme()
+  const { mode, setTheme } = useTheme()
   const { resetOrder, setOrder } = useNavOrder()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importStatus, setImportStatus] = useState<string | null>(null)
@@ -188,27 +188,33 @@ export default function Settings() {
     <div className="flex flex-col gap-4 px-4 py-6 lg:mx-auto lg:max-w-xl">
       <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Settings</h1>
 
-      <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+      <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <div>
-          <p className="font-medium text-slate-900 dark:text-slate-100">Dark mode</p>
+          <p className="font-medium text-slate-900 dark:text-slate-100">Appearance</p>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Switch between light and dark appearance.
+            Choose light, dark, or match your device setting.
           </p>
         </div>
-        <button
-          role="switch"
-          aria-checked={theme === 'dark'}
-          onClick={toggleTheme}
-          className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-200 ${
-            theme === 'dark' ? 'bg-accent' : 'bg-slate-300 dark:bg-slate-600'
-          }`}
-        >
-          <span
-            className={`absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
-              theme === 'dark' ? 'translate-x-5' : 'translate-x-0'
-            }`}
-          />
-        </button>
+        <div className="flex gap-1 rounded-xl border border-slate-300 bg-white p-1 dark:border-slate-600 dark:bg-slate-800">
+          {(
+            [
+              { value: 'light', label: 'Light' },
+              { value: 'dark', label: 'Dark' },
+              { value: 'system', label: 'System' },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.value}
+              onClick={() => setTheme(option.value)}
+              aria-pressed={mode === option.value}
+              className={`flex-1 rounded-lg py-1.5 text-sm font-medium transition-colors ${
+                mode === option.value ? 'bg-accent text-white' : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
