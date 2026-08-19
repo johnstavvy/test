@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import logo from './assets/logo.png'
 import Home from './pages/Home'
@@ -9,49 +9,25 @@ import ExpenseDetail from './pages/ExpenseDetail'
 import Budget from './pages/Budget'
 import Settings from './pages/Settings'
 import { useNavOrder } from './lib/navOrder'
-import { useDragReorder } from './lib/useDragReorder'
-import { IconChart, IconHome, IconList, IconSettings, IconWallet } from './lib/icons'
+import { useActivePill } from './lib/useActivePill'
+import { NAV_ITEMS, activeNavItem } from './lib/navItems'
 
-const NAV_ITEMS = [
-  { to: '/', label: 'Home', icon: IconHome, end: true },
-  { to: '/expenses', label: 'Expenses', icon: IconList, end: false },
-  { to: '/summary', label: 'Summary', icon: IconChart, end: false },
-  { to: '/budget', label: 'Budget', icon: IconWallet, end: false },
-  { to: '/settings', label: 'Settings', icon: IconSettings, end: false },
-]
-
-type NavDragProps = {
-  orderIndex: number
-  isDragging: boolean
-  dragOffset: number
-  onPointerDown: (e: ReactPointerEvent) => void
-  onClickCapture: (e: ReactMouseEvent) => void
-  registerRef: (el: HTMLElement | null) => void
-}
-
-function BottomBarItem({ item, drag }: { item: (typeof NAV_ITEMS)[number]; drag: NavDragProps }) {
+function BottomBarItem({
+  item,
+  pillRef,
+}: {
+  item: (typeof NAV_ITEMS)[number]
+  pillRef: (el: HTMLElement | null) => void
+}) {
   return (
     <NavLink
-      ref={(el) => drag.registerRef(el)}
+      ref={pillRef}
       to={item.to}
       end={item.end}
-      draggable={false}
-      onPointerDown={drag.onPointerDown}
-      onClickCapture={drag.onClickCapture}
-      onContextMenu={(e) => e.preventDefault()}
-      style={{
-        order: drag.orderIndex,
-        touchAction: 'none',
-        WebkitTouchCallout: 'none',
-        WebkitUserSelect: 'none',
-        transform: drag.isDragging ? `translateX(${drag.dragOffset}px)` : undefined,
-        transition: drag.isDragging ? 'none' : 'transform 200ms ease-out',
-        zIndex: drag.isDragging ? 10 : undefined,
-      }}
       className={({ isActive }) =>
-        `flex min-w-0 flex-1 select-none flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
+        `relative z-10 flex min-w-0 flex-1 select-none flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
           isActive ? 'text-accent' : 'text-slate-400 dark:text-slate-500'
-        } ${drag.isDragging ? 'scale-110 opacity-80' : ''}`
+        }`
       }
     >
       {({ isActive }) => (
@@ -86,29 +62,15 @@ function useScrolledPastTop(threshold = 16) {
   return scrolled
 }
 
-function SidebarItem({ item, drag }: { item: (typeof NAV_ITEMS)[number]; drag: NavDragProps }) {
+function SidebarItem({ item }: { item: (typeof NAV_ITEMS)[number] }) {
   return (
     <NavLink
-      ref={(el) => drag.registerRef(el)}
       to={item.to}
       end={item.end}
-      draggable={false}
-      onPointerDown={drag.onPointerDown}
-      onClickCapture={drag.onClickCapture}
-      onContextMenu={(e) => e.preventDefault()}
-      style={{
-        order: drag.orderIndex,
-        touchAction: 'none',
-        WebkitTouchCallout: 'none',
-        WebkitUserSelect: 'none',
-        transform: drag.isDragging ? `translateY(${drag.dragOffset}px)` : undefined,
-        transition: drag.isDragging ? 'none' : 'transform 200ms ease-out',
-        zIndex: drag.isDragging ? 10 : undefined,
-      }}
       className={({ isActive }) =>
-        `flex select-none items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors lg:hover:bg-slate-100 dark:lg:hover:bg-slate-800 ${
+        `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors lg:hover:bg-slate-100 dark:lg:hover:bg-slate-800 ${
           isActive ? 'bg-accent/10 text-accent dark:bg-accent/15' : 'text-slate-500 dark:text-slate-400'
-        } ${drag.isDragging ? 'scale-105 shadow-lg' : ''}`
+        }`
       }
     >
       <item.icon className="h-5 w-5" />
@@ -120,22 +82,11 @@ function SidebarItem({ item, drag }: { item: (typeof NAV_ITEMS)[number]; drag: N
 export default function App() {
   const location = useLocation()
   const scrolled = useScrolledPastTop()
-  const { order, setOrder } = useNavOrder()
+  const { order } = useNavOrder()
 
-  const bottomDrag = useDragReorder(order, setOrder, 'x')
-  const sidebarDrag = useDragReorder(order, setOrder, 'y')
-
-  function dragPropsFor(source: typeof bottomDrag, to: string): NavDragProps {
-    const isDragging = source.dragState?.key === to
-    return {
-      orderIndex: order.indexOf(to),
-      isDragging,
-      dragOffset: isDragging ? source.dragState!.offset : 0,
-      onPointerDown: (e) => source.handlePointerDown(to, e),
-      onClickCapture: source.handleClickCapture,
-      registerRef: (el) => source.registerItemRef(to, el),
-    }
-  }
+  const orderedItems = order.map((to) => NAV_ITEMS.find((item) => item.to === to)!).filter(Boolean)
+  const activeItem = activeNavItem(location.pathname)
+  const bottomPill = useActivePill(activeItem.to, [order])
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-50 dark:bg-slate-900 lg:mx-0 lg:max-w-none lg:flex-row">
@@ -144,8 +95,8 @@ export default function App() {
           <img src={logo} alt="" className="h-7 w-7 rounded-lg" />
           <span className="font-semibold text-slate-900 dark:text-slate-100">Pecunia</span>
         </div>
-        {NAV_ITEMS.map((item) => (
-          <SidebarItem key={item.to} item={item} drag={dragPropsFor(sidebarDrag, item.to)} />
+        {orderedItems.map((item) => (
+          <SidebarItem key={item.to} item={item} />
         ))}
       </aside>
 
@@ -179,9 +130,16 @@ export default function App() {
           }`}
           style={{ bottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
         >
-          <div className="flex justify-around px-1 py-1.5">
-            {NAV_ITEMS.map((item) => (
-              <BottomBarItem key={item.to} item={item} drag={dragPropsFor(bottomDrag, item.to)} />
+          <div ref={bottomPill.containerRef} className="relative flex justify-around px-1 py-1.5">
+            <div
+              aria-hidden
+              className={`pointer-events-none absolute inset-y-1 z-0 rounded-full bg-slate-900/[0.06] backdrop-blur-sm transition-all ease-[cubic-bezier(0.34,1.56,0.64,1)] dark:bg-white/10 ${
+                bottomPill.rect ? 'opacity-100 duration-300' : 'opacity-0 duration-0'
+              }`}
+              style={bottomPill.rect ? { left: bottomPill.rect.start, width: bottomPill.rect.size } : undefined}
+            />
+            {orderedItems.map((item) => (
+              <BottomBarItem key={item.to} item={item} pillRef={bottomPill.registerRef(item.to)} />
             ))}
           </div>
         </nav>

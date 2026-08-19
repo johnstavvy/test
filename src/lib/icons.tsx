@@ -160,3 +160,12 @@ export function IconChevronDown({ className }: IconProps) {
     </svg>
   )
 }
+
+export function IconGripLines({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <line x1="4" y1="9" x2="20" y2="9" />
+      <line x1="4" y1="15" x2="20" y2="15" />
+    </svg>
+  )
+}

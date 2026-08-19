@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTheme } from '../lib/theme'
 import { useNavOrder } from '../lib/navOrder'
+import { useDragReorder } from '../lib/useDragReorder'
+import { NAV_ITEMS } from '../lib/navItems'
+import { SegmentedControl } from '../lib/SegmentedControl'
 import { downloadBackup, exportData, parseBackupFile, restoreBackup } from '../lib/backup'
 import { useCustomRules } from '../lib/customCategories'
 import { useConfirm } from '../lib/confirm'
@@ -8,7 +11,7 @@ import { useToast } from '../lib/toast'
 import { useSwipeToDelete } from '../lib/useSwipeToDelete'
 import { clearTrash, listTrash, removeFromTrash, restoreFromTrash } from '../lib/trash'
 import { CATEGORIES, type Bill, type Category, type Expense, type Income, type TrashEntry } from '../db'
-import { IconClose } from '../lib/icons'
+import { IconClose, IconGripLines } from '../lib/icons'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -34,6 +37,44 @@ function describeTrashEntry(entry: TrashEntry): { title: string; amount: string 
   }
   const i = entry.data as Income
   return { title: i.source, amount: `${currency.format(i.amount)}/mo` }
+}
+
+// Reordering happens here, not on the live nav bar — dragging directly on the bar
+// would fight with its glass "liquid" active-tab pill, which relies on the bar
+// being a plain non-interactive-for-dragging list of links.
+function MenuOrderList({ order, setOrder }: { order: string[]; setOrder: (order: string[]) => void }) {
+  const drag = useDragReorder(order, setOrder, 'y')
+  const orderedItems = order.map((to) => NAV_ITEMS.find((item) => item.to === to)!).filter(Boolean)
+
+  return (
+    <div className="flex flex-col gap-2">
+      {orderedItems.map((item) => {
+        const isDragging = drag.dragState?.key === item.to
+        return (
+          <div
+            key={item.to}
+            ref={(el) => drag.registerItemRef(item.to, el)}
+            onPointerDown={(e) => drag.handlePointerDown(item.to, e)}
+            onContextMenu={(e) => e.preventDefault()}
+            style={{
+              touchAction: 'none',
+              WebkitUserSelect: 'none',
+              transform: isDragging ? `translateY(${drag.dragState!.offset}px)` : undefined,
+              transition: isDragging ? 'none' : 'transform 200ms ease-out',
+              zIndex: isDragging ? 10 : undefined,
+            }}
+            className={`flex select-none items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 ${
+              isDragging ? 'scale-105 shadow-lg' : ''
+            }`}
+          >
+            <item.icon className="h-5 w-5 shrink-0 text-slate-400 dark:text-slate-500" />
+            <span className="flex-1">{item.label}</span>
+            <IconGripLines className="h-4 w-4 shrink-0 text-slate-300 dark:text-slate-600" />
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 function TrashRow({
@@ -90,7 +131,7 @@ function TrashRow({
 
 export default function Settings() {
   const { mode, setTheme } = useTheme()
-  const { resetOrder, setOrder } = useNavOrder()
+  const { order, resetOrder, setOrder } = useNavOrder()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importStatus, setImportStatus] = useState<string | null>(null)
   const { rules, add, remove, refresh: refreshRules } = useCustomRules()
@@ -195,41 +236,28 @@ export default function Settings() {
             Choose light, dark, or match your device setting.
           </p>
         </div>
-        <div className="flex gap-1 rounded-xl border border-slate-300 bg-white p-1 dark:border-slate-600 dark:bg-slate-800">
-          {(
-            [
-              { value: 'light', label: 'Light' },
-              { value: 'dark', label: 'Dark' },
-              { value: 'system', label: 'System' },
-            ] as const
-          ).map((option) => (
-            <button
-              key={option.value}
-              onClick={() => setTheme(option.value)}
-              aria-pressed={mode === option.value}
-              className={`flex-1 rounded-lg py-1.5 text-sm font-medium transition-colors ${
-                mode === option.value ? 'bg-accent text-white' : 'text-slate-500 dark:text-slate-400'
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          value={mode}
+          onChange={setTheme}
+          options={[
+            { value: 'light', label: 'Light' },
+            { value: 'dark', label: 'Dark' },
+            { value: 'system', label: 'System' },
+          ]}
+        />
       </div>
 
-      <div className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <div>
-          <p className="font-medium text-slate-900 dark:text-slate-100">Menu order</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Press and drag any tab in the menu to reorder it.
-          </p>
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-medium text-slate-900 dark:text-slate-100">Menu order</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Press and drag a tab to reorder it.</p>
+          </div>
+          <button onClick={resetOrder} className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400">
+            Reset
+          </button>
         </div>
-        <button
-          onClick={resetOrder}
-          className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400"
-        >
-          Reset
-        </button>
+        <MenuOrderList order={order} setOrder={setOrder} />
       </div>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">

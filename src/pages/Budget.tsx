@@ -21,6 +21,7 @@ import { isRecurring } from '../lib/recurring'
 import { useToast } from '../lib/toast'
 import { addToTrash, removeFromTrash } from '../lib/trash'
 import { useGrowIn } from '../lib/useGrowIn'
+import { SegmentedControl } from '../lib/SegmentedControl'
 import { IconCar, IconCheck, IconHome, IconPencil, IconTv } from '../lib/icons'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
@@ -53,19 +54,14 @@ function personOf(entity: { person?: 1 | 2 }): 1 | 2 {
 
 function FrequencyToggle({ recurring, onChange }: { recurring: boolean; onChange: (recurring: boolean) => void }) {
   return (
-    <div className="flex gap-1 rounded-xl border border-slate-300 bg-white p-1 dark:border-slate-600 dark:bg-slate-800">
-      {([true, false] as const).map((value) => (
-        <button
-          key={String(value)}
-          onClick={() => onChange(value)}
-          className={`flex-1 rounded-lg py-1.5 text-sm font-medium transition-colors ${
-            recurring === value ? 'bg-accent text-white' : 'text-slate-500 dark:text-slate-400'
-          }`}
-        >
-          {value ? 'Recurring monthly' : 'One-time'}
-        </button>
-      ))}
-    </div>
+    <SegmentedControl
+      value={recurring}
+      onChange={onChange}
+      options={[
+        { value: true, label: 'Recurring monthly' },
+        { value: false, label: 'One-time' },
+      ]}
+    />
   )
 }
 
@@ -162,19 +158,14 @@ function BillForm({
       {draft.category === 'Subscription' && names && (
         <label className={labelClass}>
           Person
-          <div className="flex gap-1 rounded-xl border border-slate-300 bg-white p-1 dark:border-slate-600 dark:bg-slate-800">
-            {([1, 2] as const).map((p) => (
-              <button
-                key={p}
-                onClick={() => set('person', p)}
-                className={`flex-1 truncate rounded-lg py-1.5 text-sm font-medium transition-colors ${
-                  personOf(draft) === p ? 'bg-accent text-white' : 'text-slate-500 dark:text-slate-400'
-                }`}
-              >
-                {names[p - 1]}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            value={personOf(draft)}
+            onChange={(p) => set('person', p)}
+            options={[
+              { value: 1, label: names[0] },
+              { value: 2, label: names[1] },
+            ]}
+          />
         </label>
       )}
 
@@ -656,19 +647,14 @@ function IncomeForm({
 
       <label className={labelClass}>
         Person
-        <div className="flex gap-1 rounded-xl border border-slate-300 bg-white p-1 dark:border-slate-600 dark:bg-slate-800">
-          {([1, 2] as const).map((p) => (
-            <button
-              key={p}
-              onClick={() => set('person', p)}
-              className={`flex-1 truncate rounded-lg py-1.5 text-sm font-medium transition-colors ${
-                draft.person === p ? 'bg-accent text-white' : 'text-slate-500 dark:text-slate-400'
-              }`}
-            >
-              {names[p - 1]}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          value={draft.person}
+          onChange={(p) => set('person', p)}
+          options={[
+            { value: 1, label: names[0] },
+            { value: 2, label: names[1] },
+          ]}
+        />
       </label>
 
       <label className={labelClass}>
@@ -1008,19 +994,15 @@ export default function Budget() {
     <div className="flex flex-col gap-4 px-4 py-6 lg:mx-auto lg:max-w-3xl">
       <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Budget</h1>
 
-      <div className="flex gap-1 rounded-full border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-800">
-        {(['bills', 'income'] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => setSection(s)}
-            className={`flex-1 rounded-full py-2 text-sm font-semibold capitalize transition-colors ${
-              section === s ? 'bg-accent text-white' : 'text-slate-500 dark:text-slate-400'
-            }`}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        shape="pill"
+        value={section}
+        onChange={setSection}
+        options={[
+          { value: 'bills', label: 'Bills' },
+          { value: 'income', label: 'Income' },
+        ]}
+      />
 
       {(section === 'bills' ? bills.length > 0 : incomes.length > 0) && (
         <input
