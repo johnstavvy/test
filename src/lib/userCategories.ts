@@ -24,11 +24,19 @@ export function setUserCategories(categories: Category[]) {
   localStorage.setItem(KEY, JSON.stringify(categories))
 }
 
-// Built-ins first (in their existing order), then user-added ones in the order
-// added — this is the list every category `<select>`/filter in the app should
-// render, instead of the CATEGORIES constant directly.
+// Built-ins and user-added categories merged and sorted alphabetically (so a
+// newly-added one lands in its rightful spot instead of always at the very
+// bottom), with "Other" pinned last as the catch-all.
+function mergeSorted(custom: Category[]): Category[] {
+  const rest = [...CATEGORIES, ...custom].filter((c) => c !== 'Other')
+  rest.sort((a, b) => a.localeCompare(b))
+  return [...rest, 'Other']
+}
+
+// The list every category `<select>`/filter in the app should render, instead
+// of the CATEGORIES constant directly.
 export function getAllCategories(): Category[] {
-  return [...CATEGORIES, ...getUserCategories()]
+  return mergeSorted(getUserCategories())
 }
 
 export function addUserCategory(name: string): Category[] {
@@ -63,5 +71,5 @@ export function useCategories() {
     setExtra(getUserCategories())
   }
 
-  return { categories: [...CATEGORIES, ...extra], userCategories: extra, add, remove, refresh }
+  return { categories: mergeSorted(extra), userCategories: extra, add, remove, refresh }
 }

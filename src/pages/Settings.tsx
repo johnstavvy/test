@@ -309,54 +309,6 @@ export default function Settings() {
 
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <div>
-          <p className="font-medium text-slate-900 dark:text-slate-100">Categories</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Add your own category — it'll show up anywhere you pick a category, including scanning a new expense.
-          </p>
-        </div>
-
-        <div className="flex gap-2">
-          <input
-            value={newCategoryName}
-            onChange={(e) => setNewCategoryName(e.target.value)}
-            placeholder="e.g. Childcare"
-            className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-          />
-          <button
-            onClick={() => {
-              if (!newCategoryName.trim()) return
-              addCategory(newCategoryName)
-              setNewCategoryName('')
-            }}
-            className="shrink-0 rounded-full bg-accent px-3 py-2 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-95 active:opacity-90"
-          >
-            Add
-          </button>
-        </div>
-
-        {userCategories.length > 0 && (
-          <ul className="flex flex-col gap-2">
-            {userCategories.map((c) => (
-              <li
-                key={c}
-                className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-slate-700/50"
-              >
-                <span className="min-w-0 truncate font-medium text-slate-700 dark:text-slate-200">{c}</span>
-                <button
-                  onClick={() => removeCategory(c)}
-                  className="shrink-0 pl-3 text-red-600 dark:text-red-400"
-                  aria-label={`Remove category ${c}`}
-                >
-                  <IconClose className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <div>
           <p className="font-medium text-slate-900 dark:text-slate-100">Custom category rules</p>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Teach the scanner a merchant name so future receipts land in the right category automatically.
@@ -410,6 +362,56 @@ export default function Settings() {
                 </button>
               </li>
             ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div>
+          <p className="font-medium text-slate-900 dark:text-slate-100">Categories</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Add your own category — it'll show up anywhere you pick a category, including scanning a new expense.
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <input
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+            placeholder="e.g. Childcare"
+            className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          />
+          <button
+            onClick={() => {
+              if (!newCategoryName.trim()) return
+              addCategory(newCategoryName)
+              setNewCategoryName('')
+            }}
+            className="shrink-0 rounded-full bg-accent px-3 py-2 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-95 active:opacity-90"
+          >
+            Add
+          </button>
+        </div>
+
+        {userCategories.length > 0 && (
+          <ul className="flex flex-col gap-2">
+            {[...userCategories]
+              .sort((a, b) => a.localeCompare(b))
+              .map((c) => (
+                <li
+                  key={c}
+                  className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-slate-700/50"
+                >
+                  <span className="min-w-0 truncate font-medium text-slate-700 dark:text-slate-200">{c}</span>
+                  <button
+                    onClick={() => removeCategory(c)}
+                    className="shrink-0 pl-3 text-red-600 dark:text-red-400"
+                    aria-label={`Remove category ${c}`}
+                  >
+                    <IconClose className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              ))}
           </ul>
         )}
       </div>
