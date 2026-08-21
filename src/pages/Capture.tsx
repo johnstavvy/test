@@ -1,19 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CATEGORIES, type Category } from '../db'
-import { fileToResizedDataUrl, videoFrameToResizedDataUrl } from '../lib/image'
+import { cropDataUrl, fileToResizedDataUrl, videoFrameToResizedDataUrl, type CropRect } from '../lib/image'
 import { recognizeReceiptText } from '../lib/ocr'
 import { parseReceiptText } from '../lib/parseReceipt'
 import { guessCategory } from '../lib/categorize'
 import { addCustomRule } from '../lib/customCategories'
 import { addExpense } from '../lib/expenses'
 import { IconClose, IconFlash, IconReceipt } from '../lib/icons'
+import { ReceiptCropper } from '../lib/ReceiptCropper'
 import { useToast } from '../lib/toast'
 import { isoDate } from '../lib/week'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
-type Stage = 'idle' | 'camera' | 'scanning' | 'review' | 'saving'
+type Stage = 'idle' | 'camera' | 'crop' | 'scanning' | 'review' | 'saving'
 
 type TorchCapabilities = MediaTrackCapabilities & { torch?: boolean }
 type TorchConstraintSet = MediaTrackConstraintSet & { torch?: boolean }
@@ -37,6 +38,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
   const [torchSupported, setTorchSupported] = useState(false)
 
   const [imageDataUrl, setImageDataUrl] = useState('')
+  const [pendingImage, setPendingImage] = useState('')
   const [rawText, setRawText] = useState('')
   const [merchant, setMerchant] = useState('')
   const [date, setDate] = useState('')
@@ -126,7 +128,19 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
     if (!video) return
     const dataUrl = videoFrameToResizedDataUrl(video)
     closeCamera()
-    processImage(dataUrl)
+    setPendingImage(dataUrl)
+    setStage('crop')
+  }
+
+  async function confirmCrop(rect: CropRect) {
+    const cropped = await cropDataUrl(pendingImage, rect)
+    setPendingImage('')
+    processImage(cropped)
+  }
+
+  function cancelCrop() {
+    setPendingImage('')
+    setStage('idle')
   }
 
   async function processImage(resized: string) {
@@ -153,7 +167,8 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
 
   async function handleFile(file: File) {
     const resized = await fileToResizedDataUrl(file)
-    processImage(resized)
+    setPendingImage(resized)
+    setStage('crop')
   }
 
   function handleManualEntry() {
@@ -196,6 +211,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
 
   function reset() {
     setStage('idle')
+    setPendingImage('')
     setImageDataUrl('')
     setRawText('')
     setMerchant('')
@@ -300,6 +316,10 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
         </div>
       </div>
     )
+  }
+
+  if (stage === 'crop') {
+    return <ReceiptCropper imageDataUrl={pendingImage} onConfirm={confirmCrop} onCancel={cancelCrop} />
   }
 
   if (stage === 'scanning') {

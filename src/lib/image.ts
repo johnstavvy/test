@@ -22,6 +22,35 @@ export function fileToResizedDataUrl(file: File, maxDimension = 1600): Promise<s
   })
 }
 
+export interface CropRect {
+  x: number // fraction of image width, 0-1
+  y: number
+  w: number
+  h: number
+}
+
+/** Crop a data URL to the given fractional rect (relative to the image's natural size). */
+export function cropDataUrl(dataUrl: string, rect: CropRect): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onerror = () => reject(new Error('Failed to load image'))
+    img.onload = () => {
+      const sx = Math.round(rect.x * img.naturalWidth)
+      const sy = Math.round(rect.y * img.naturalHeight)
+      const sw = Math.round(rect.w * img.naturalWidth)
+      const sh = Math.round(rect.h * img.naturalHeight)
+      const canvas = document.createElement('canvas')
+      canvas.width = sw
+      canvas.height = sh
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return reject(new Error('Canvas not supported'))
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
+      resolve(canvas.toDataURL('image/jpeg', 0.9))
+    }
+    img.src = dataUrl
+  })
+}
+
 /** Capture the current frame of a live video stream as a downscaled JPEG data URL. */
 export function videoFrameToResizedDataUrl(video: HTMLVideoElement, maxDimension = 1600): string {
   const scale = Math.min(1, maxDimension / Math.max(video.videoWidth, video.videoHeight))

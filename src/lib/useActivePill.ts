@@ -18,12 +18,15 @@ export function useActivePill(activeKey: string, deps: unknown[]) {
 
   useLayoutEffect(() => {
     function update() {
-      const container = containerRef.current
       const el = itemRefs.current.get(activeKey)
-      if (!container || !el) return
-      const containerRect = container.getBoundingClientRect()
-      const elRect = el.getBoundingClientRect()
-      setRect({ start: elRect.left - containerRect.left, size: elRect.width })
+      if (!el) return
+      // offsetLeft/offsetWidth are layout-space (transform/scale-invariant), unlike
+      // getBoundingClientRect() — needed because the nav container animates a CSS
+      // `scale` on scroll, and this pill's own position is set as an inline style on
+      // an element inside that same scaled container. A rect-based measurement bakes
+      // in whatever scale factor was active at measurement time, then gets scaled
+      // again by the live ancestor transform, undershooting the target position.
+      setRect({ start: el.offsetLeft, size: el.offsetWidth })
     }
     update()
     window.addEventListener('resize', update)

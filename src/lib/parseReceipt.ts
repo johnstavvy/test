@@ -61,9 +61,22 @@ export function parseReceiptText(text: string): ParsedReceipt {
     .map((l) => l.trim())
     .filter(Boolean)
 
-  // Merchant: first line that looks like a name (letters, not just numbers/symbols)
-  const merchant =
-    lines.find((l) => /[a-zA-Z]{3,}/.test(l) && !/receipt|invoice/i.test(l)) ?? 'Unknown Merchant'
+  // Merchant: among the first several lines (the header, where a store name lives),
+  // pick the one with the longest run of letters — not just the first line that
+  // merely contains 3+ letters somewhere. A noisy OCR pass on a busy photo tends to
+  // produce short garbled fragments ("aun!") before the real name, and those would
+  // otherwise win by appearing earlier even though they're clearly not a name.
+  const HEADER_LINES = 8
+  let merchant = 'Unknown Merchant'
+  let bestLetterRun = 0
+  for (const line of lines.slice(0, HEADER_LINES)) {
+    if (/receipt|invoice/i.test(line)) continue
+    const longestRun = Math.max(0, ...(line.match(/[a-zA-Z]+/g) ?? []).map((w) => w.length))
+    if (longestRun >= 3 && longestRun > bestLetterRun) {
+      bestLetterRun = longestRun
+      merchant = line
+    }
+  }
 
   // Date: search all lines for a date pattern
   let date: string | null = null
