@@ -43,7 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
               onClick={() => {
                 window.location.href = import.meta.env.BASE_URL
               }}
-              className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:active:bg-slate-800"
+              className="rounded-full border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-100 dark:border-[#3a3e45] dark:text-slate-300 dark:active:bg-[#212327]"
             >
               Go Home
             </button>

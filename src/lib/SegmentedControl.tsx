@@ -24,7 +24,7 @@ export function SegmentedControl<T extends string | number | boolean>({
   return (
     <div
       ref={active.containerRef}
-      className={`relative flex gap-1 border border-slate-300 bg-white p-1 dark:border-slate-600 dark:bg-slate-800 ${
+      className={`relative flex gap-1 border border-slate-300 bg-white p-1 dark:border-[#3a3e45] dark:bg-[#212327] ${
         shape === 'pill' ? 'rounded-full' : 'rounded-xl'
       }`}
     >

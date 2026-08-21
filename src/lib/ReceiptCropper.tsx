@@ -136,7 +136,7 @@ export function ReceiptCropper({
       <div className="mt-2 flex w-full max-w-sm gap-3">
         <button
           onClick={onCancel}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-slate-300 px-4 py-3.5 font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:active:bg-slate-800"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-slate-300 px-4 py-3.5 font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-100 dark:border-[#3a3e45] dark:text-slate-300 dark:active:bg-[#212327]"
         >
           <IconClose className="h-4 w-4" />
           Cancel

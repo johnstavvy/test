@@ -28,7 +28,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Education: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400',
   'Gifts & Donations': 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-400',
   'Fees & Charges': 'bg-stone-100 text-stone-700 dark:bg-stone-800/60 dark:text-stone-400',
-  Other: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
+  Other: 'bg-slate-100 text-slate-700 dark:bg-[#2b2e33] dark:text-slate-300',
 }
 
 function weekRangeLabel(mondayIso: string) {
@@ -62,7 +62,7 @@ function ExpenseRow({ expense, onDelete }: { expense: Expense; onDelete: (e: Exp
           WebkitTouchCallout: 'none',
           WebkitUserSelect: 'none',
         }}
-        className="relative flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800 lg:hover:border-accent/40 lg:hover:shadow-sm"
+        className="relative flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-[#31343a] dark:bg-[#212327] lg:hover:border-accent/40 lg:hover:shadow-sm"
       >
         <div className="min-w-0">
           <p className="truncate font-medium text-slate-900 dark:text-slate-100">{expense.merchant}</p>
@@ -103,7 +103,7 @@ function WeekGroup({
       <button
         onClick={onToggle}
         aria-expanded={isOpen}
-        className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800"
+        className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-[#31343a] dark:bg-[#212327]"
       >
         <div className="flex items-baseline gap-2">
           <span className="font-medium text-slate-900 dark:text-slate-100">{label}</span>
@@ -212,7 +212,7 @@ export default function Expenses() {
       </ExpandingSheet>
 
       <div className="flex flex-col gap-4 px-4 py-6">
-        <div className="sticky top-[calc(env(safe-area-inset-top)+3.75rem)] z-30 -mx-4 flex justify-center bg-slate-50/90 px-4 py-2 backdrop-blur-lg dark:bg-slate-900/90 lg:static lg:mx-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
+        <div className="sticky top-[calc(env(safe-area-inset-top)+3.75rem)] z-30 -mx-4 flex justify-center bg-slate-50/90 px-4 py-2 backdrop-blur-lg dark:bg-[#1b1d20]/90 lg:static lg:mx-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
           <button
             ref={pillRef}
             onClick={openAddExpense}
@@ -235,12 +235,12 @@ export default function Expenses() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search merchant…"
-              className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
             />
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="shrink-0 rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              className="shrink-0 rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
             >
               <option value="All">All categories</option>
               {categories.map((c) => (

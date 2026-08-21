@@ -34,7 +34,7 @@ function SpendingTrend({
     return (
       <Link
         to="/budget"
-        className="flex items-center justify-between rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400"
+        className="flex items-center justify-between rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-400"
       >
         <span>Add bills and income to see your monthly budget overview</span>
         <span className="ml-3 shrink-0 text-accent">Set up →</span>
@@ -78,7 +78,7 @@ function SpendingTrend({
     : ''
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+    <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
       <div className="flex items-baseline justify-between">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
           Spending this month
@@ -147,7 +147,7 @@ function SpendingTrend({
       </svg>
       {lastPoint && (
         <div
-          className={`absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#e11d48] shadow-sm transition-opacity dark:border-slate-800 ${durationClass} ${
+          className={`absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#e11d48] shadow-sm transition-opacity dark:border-[#212327] ${durationClass} ${
             grown ? 'opacity-100' : 'opacity-0'
           }`}
           style={{ left: `${(lastPoint[0] / width) * 100}%`, top: `${(lastPoint[1] / height) * 100}%` }}
@@ -165,7 +165,7 @@ function SpendingTrend({
           Outgoing <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">{currency.format(outgoing)}</span>
         </span>
       </div>
-      <div className="flex items-center justify-between border-t border-slate-100 pt-1.5 text-sm dark:border-slate-700">
+      <div className="flex items-center justify-between border-t border-slate-100 pt-1.5 text-sm dark:border-[#31343a]">
         <span className="text-slate-600 dark:text-slate-300">Net</span>
         <span
           className={`font-semibold ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}
@@ -176,7 +176,7 @@ function SpendingTrend({
       </div>
       {(overBudget || nearingBudget) && (
         <p
-          className={`flex items-center gap-1.5 border-t border-slate-100 pt-1.5 text-xs font-medium dark:border-slate-700 ${overBudget ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}`}
+          className={`flex items-center gap-1.5 border-t border-slate-100 pt-1.5 text-xs font-medium dark:border-[#31343a] ${overBudget ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}`}
         >
           <IconAlertTriangle className="h-3.5 w-3.5 shrink-0" />
           {overBudget
@@ -207,7 +207,7 @@ function UpcomingBills({ bills }: { bills: Bill[] }) {
   return (
     <Link
       to="/budget"
-      className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800"
+      className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-[#31343a] dark:bg-[#212327]"
     >
       <div className="flex items-center justify-between">
         <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
@@ -216,7 +216,7 @@ function UpcomingBills({ bills }: { bills: Bill[] }) {
         </p>
         <span className="text-xs text-accent">View all →</span>
       </div>
-      <div className="flex flex-col divide-y divide-slate-100 dark:divide-slate-700">
+      <div className="flex flex-col divide-y divide-slate-100 dark:divide-[#2b2e33]">
         {upcoming.map(({ bill, days }) => {
           const soon = days <= 3
           return (
@@ -384,7 +384,7 @@ export default function Home() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search merchant…"
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
           />
         )}
       </div>
@@ -405,7 +405,7 @@ export default function Home() {
                 <Link
                   key={e.id}
                   to={`/expense/${e.id}`}
-                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-md"
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-[#31343a] dark:bg-[#212327] dark:active:bg-[#2b2e33] lg:hover:border-accent/40 lg:hover:shadow-md"
                 >
                   <p className="truncate font-medium text-slate-900 dark:text-slate-100">{e.merchant}</p>
                   <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
@@ -430,7 +430,7 @@ export default function Home() {
           {selectedDay && `${longLabel(selectedDay)} · ${currency.format(dailyTotals[selectedDay])}`}
         </p>
 
-        <div className="flex flex-1 items-end justify-between gap-2 border-b border-slate-200 pb-0 dark:border-slate-700">
+        <div className="flex flex-1 items-end justify-between gap-2 border-b border-slate-200 pb-0 dark:border-[#31343a]">
           {days.map((iso) => {
             const value = dailyTotals[iso]
             const heightPct = barGrow.grown ? Math.max((value / maxValue) * 100, value > 0 ? 8 : 3) : 0
@@ -447,7 +447,7 @@ export default function Home() {
                     barGrow.settled ? 'duration-200' : 'duration-[1250ms] ease-out'
                   } ${
                     isSelected
-                      ? 'ring-2 ring-accent ring-offset-2 ring-offset-slate-50 dark:ring-offset-slate-900'
+                      ? 'ring-2 ring-accent ring-offset-2 ring-offset-slate-50 dark:ring-offset-[#17181b]'
                       : ''
                   }`}
                   style={{ height: `${heightPct}%` }}
@@ -469,7 +469,7 @@ export default function Home() {
         <button
           onClick={() => setRecentOpen((open) => !open)}
           aria-expanded={recentOpen}
-          className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800"
+          className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-[#31343a] dark:bg-[#212327]"
         >
           <span className="font-medium text-slate-900 dark:text-slate-100">Recent Expenses</span>
           <IconChevronDown
@@ -496,7 +496,7 @@ export default function Home() {
                   <Link
                     key={e.id}
                     to={`/expense/${e.id}`}
-                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:active:bg-slate-700 lg:hover:border-accent/40 lg:hover:shadow-md"
+                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-[#31343a] dark:bg-[#212327] dark:active:bg-[#2b2e33] lg:hover:border-accent/40 lg:hover:shadow-md"
                   >
                     <p className="truncate font-medium text-slate-900 dark:text-slate-100">{e.merchant}</p>
                     <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">

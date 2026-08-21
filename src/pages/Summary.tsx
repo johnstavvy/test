@@ -18,7 +18,7 @@ function MonthlyBudget({ income, bills, spent }: { income: number; bills: number
     return (
       <Link
         to="/budget"
-        className="flex items-center justify-between rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400"
+        className="flex items-center justify-between rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-400"
       >
         <span>Add bills and income to compare spending against your budget</span>
         <span className="ml-3 shrink-0 text-accent">Set up →</span>
@@ -34,7 +34,7 @@ function MonthlyBudget({ income, bills, spent }: { income: number; bills: number
   const widthPct = grown ? Math.min(Math.max(pct * 100, spent > 0 ? 4 : 0), 100) : 0
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+    <section className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
       <div className="mb-1 flex items-baseline justify-between text-sm">
         <span className="font-medium text-slate-700 dark:text-slate-300">
           Spent {currency.format(spent)} of {currency.format(Math.max(discretionary, 0))}
@@ -46,7 +46,7 @@ function MonthlyBudget({ income, bills, spent }: { income: number; bills: number
           {currency.format(Math.abs(remaining))} {over ? 'over' : 'left'}
         </span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-[#2b2e33]">
         <div
           className={`h-full rounded-full transition-all ${settled ? 'duration-300' : 'duration-[1250ms] ease-out'} ${over ? 'bg-rose-500' : nearingLimit ? 'bg-amber-500' : 'bg-accent'}`}
           style={{ width: `${widthPct}%` }}
@@ -110,7 +110,7 @@ function CategoryBarList({ rows }: { rows: { label: string; total: number; cap?:
                 {hasCap ? `${currency.format(r.total)} of ${currency.format(r.cap!)}` : currency.format(r.total)}
               </span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-[#2b2e33]">
               <div
                 className={`h-full rounded-full ${barColor} transition-all ${durationClass}`}
                 style={{ width: `${widthPct}%` }}
@@ -134,7 +134,7 @@ function BarList({ rows }: { rows: { label: string; total: number }[] }) {
             <span className="font-medium text-slate-700 dark:text-slate-300">{r.label}</span>
             <span className="tabular-nums text-slate-500 dark:text-slate-400">{currency.format(r.total)}</span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-[#2b2e33]">
             <div
               className={`h-full rounded-full bg-accent transition-all ${settled ? 'duration-300' : 'duration-[1250ms] ease-out'}`}
               style={{ width: `${grown ? Math.max((r.total / max) * 100, 4) : 0}%` }}

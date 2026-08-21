@@ -85,7 +85,7 @@ export default function ExpenseDetail() {
         <input
           value={expense.merchant}
           onChange={(e) => set('merchant', e.target.value)}
-          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
         />
       </label>
 
@@ -96,7 +96,7 @@ export default function ExpenseDetail() {
             type="date"
             value={expense.date}
             onChange={(e) => set('date', e.target.value)}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
           />
         </label>
         <label className="flex flex-1 flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
@@ -108,7 +108,7 @@ export default function ExpenseDetail() {
             value={Number.isNaN(expense.total) ? '' : expense.total}
             onChange={(e) => set('total', e.target.value === '' ? NaN : parseFloat(e.target.value))}
             onBlur={() => Number.isNaN(expense.total) && set('total', 0)}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
           />
         </label>
       </div>
@@ -118,7 +118,7 @@ export default function ExpenseDetail() {
         <select
           value={expense.category}
           onChange={(e) => set('category', e.target.value as Category)}
-          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
         >
           {categories.map((c) => (
             <option key={c} value={c}>
@@ -146,7 +146,7 @@ export default function ExpenseDetail() {
       {expense.rawText && (
         <details className="text-sm text-slate-500 dark:text-slate-400">
           <summary className="cursor-pointer font-medium">Raw scanned text</summary>
-          <pre className="mt-2 whitespace-pre-wrap rounded-2xl bg-slate-50 p-3 text-xs dark:bg-slate-800">{expense.rawText}</pre>
+          <pre className="mt-2 whitespace-pre-wrap rounded-2xl bg-slate-50 p-3 text-xs dark:bg-[#212327]">{expense.rawText}</pre>
         </details>
       )}
 

@@ -249,7 +249,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
           >
             Take Photo
           </button>
-          <label className="w-full cursor-pointer rounded-full border border-slate-300 px-4 py-3.5 text-center font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:active:bg-slate-800">
+          <label className="w-full cursor-pointer rounded-full border border-slate-300 px-4 py-3.5 text-center font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-100 dark:border-[#3a3e45] dark:text-slate-300 dark:active:bg-[#212327]">
             Choose from Library
             <input
               type="file"
@@ -260,7 +260,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
           </label>
           <button
             onClick={handleManualEntry}
-            className="w-full rounded-full border border-slate-300 px-4 py-3.5 text-center font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:active:bg-slate-800"
+            className="w-full rounded-full border border-slate-300 px-4 py-3.5 text-center font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-100 dark:border-[#3a3e45] dark:text-slate-300 dark:active:bg-[#212327]"
           >
             Enter Manually
           </button>
@@ -331,7 +331,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
           <img src={imageDataUrl} alt="Receipt preview" className="h-40 w-auto rounded-2xl shadow" />
         )}
         <p className="font-medium text-slate-700 dark:text-slate-300">Reading receipt… {progress}%</p>
-        <div className="h-2 w-full max-w-xs overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+        <div className="h-2 w-full max-w-xs overflow-hidden rounded-full bg-slate-200 dark:bg-[#2b2e33]">
           <div
             className="h-full bg-accent transition-all"
             style={{ width: `${progress}%` }}
@@ -362,7 +362,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
             setMerchant(value)
             if (!imageDataUrl && !categoryTouched) setCategory(guessCategory(value))
           }}
-          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
         />
       </label>
 
@@ -373,7 +373,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
           />
         </label>
         <label className="flex flex-1 flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
@@ -384,7 +384,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
             step="0.01"
             value={total}
             onChange={(e) => setTotal(e.target.value)}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
           />
         </label>
       </div>
@@ -397,7 +397,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
             setCategory(e.target.value as Category)
             setCategoryTouched(true)
           }}
-          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
         >
           {categories.map((c) => (
             <option key={c} value={c}>
@@ -424,7 +424,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
       <div className="mt-2 flex gap-3">
         <button
           onClick={reset}
-          className="flex-1 rounded-full border border-slate-300 px-4 py-3.5 font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:active:bg-slate-800"
+          className="flex-1 rounded-full border border-slate-300 px-4 py-3.5 font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-100 dark:border-[#3a3e45] dark:text-slate-300 dark:active:bg-[#212327]"
         >
           {imageDataUrl ? 'Retake' : 'Cancel'}
         </button>

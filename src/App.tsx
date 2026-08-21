@@ -68,7 +68,7 @@ function SidebarItem({ item }: { item: (typeof NAV_ITEMS)[number] }) {
       to={item.to}
       end={item.end}
       className={({ isActive }) =>
-        `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors lg:hover:bg-slate-100 dark:lg:hover:bg-slate-800 ${
+        `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors lg:hover:bg-slate-100 dark:lg:hover:bg-[#2d3036] ${
           isActive ? 'bg-accent/10 text-accent dark:bg-accent/15' : 'text-slate-500 dark:text-slate-400'
         }`
       }
@@ -89,8 +89,8 @@ export default function App() {
   const bottomPill = useActivePill(activeItem.to, [order])
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-50 dark:bg-slate-900 lg:mx-0 lg:max-w-none lg:flex-row">
-      <aside className="hidden lg:sticky lg:top-4 lg:m-4 lg:flex lg:h-[calc(100vh-2rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-1 lg:rounded-3xl lg:border lg:border-white/60 lg:bg-white/70 lg:p-4 lg:shadow-lg lg:shadow-slate-900/10 lg:backdrop-blur-xl dark:lg:border-white/10 dark:lg:bg-slate-900/70 dark:lg:shadow-black/40">
+    <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-50 dark:bg-[#17181b] lg:mx-0 lg:max-w-none lg:flex-row">
+      <aside className="hidden lg:sticky lg:top-4 lg:m-4 lg:flex lg:h-[calc(100vh-2rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-1 lg:rounded-3xl lg:border lg:border-white/60 lg:bg-white/70 lg:p-4 lg:shadow-lg lg:shadow-slate-900/10 lg:backdrop-blur-xl dark:lg:border-white/10 dark:lg:bg-[#1b1d20]/70 dark:lg:shadow-black/40">
         <div className="flex items-center gap-2 px-3 pb-4 pt-1">
           <img src={logo} alt="" className="h-7 w-7 rounded-lg" />
           <span className="font-semibold text-slate-900 dark:text-slate-100">Pecunia</span>
@@ -102,7 +102,7 @@ export default function App() {
 
       <div className="flex min-h-screen flex-1 flex-col lg:min-h-0">
         <header
-          className="sticky top-0 z-20 flex items-center justify-center gap-2 border-b border-slate-200/80 bg-white/80 py-3 backdrop-blur-lg dark:border-slate-800 dark:bg-slate-900/80 lg:hidden"
+          className="sticky top-0 z-20 flex items-center justify-center gap-2 border-b border-slate-200/80 bg-white/80 py-3 backdrop-blur-lg dark:border-[#31343a] dark:bg-[#1b1d20]/80 lg:hidden"
           style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.5rem)' }}
         >
           <img src={logo} alt="" className="h-6 w-6 rounded-md" />
@@ -125,7 +125,7 @@ export default function App() {
         </main>
 
         <nav
-          className={`fixed inset-x-4 z-40 mx-auto max-w-md origin-bottom rounded-full border border-white/60 bg-white/70 shadow-lg shadow-slate-900/10 backdrop-blur-xl transition-transform duration-300 ease-out dark:border-white/10 dark:bg-slate-900/70 dark:shadow-black/40 lg:hidden ${
+          className={`fixed inset-x-4 z-40 mx-auto max-w-md origin-bottom rounded-full border border-white/60 bg-white/70 shadow-lg shadow-slate-900/10 backdrop-blur-xl transition-transform duration-300 ease-out dark:border-white/10 dark:bg-[#1b1d20]/70 dark:shadow-black/40 lg:hidden ${
             scrolled ? 'scale-75' : 'scale-100'
           }`}
           style={{ bottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
@@ -133,7 +133,7 @@ export default function App() {
           <div ref={bottomPill.containerRef} className="relative flex justify-around px-1 py-1.5">
             <div
               aria-hidden
-              className={`pointer-events-none absolute inset-y-1 z-0 rounded-full bg-slate-900/[0.06] backdrop-blur-sm transition-all ease-[cubic-bezier(0.34,1.56,0.64,1)] dark:bg-white/10 ${
+              className={`pointer-events-none absolute inset-y-1 z-0 rounded-full bg-slate-900/[0.06] backdrop-blur-sm transition-all ease-[cubic-bezier(0.34,1.56,0.64,1)] dark:bg-[#2d3036] ${
                 bottomPill.rect ? 'opacity-100 duration-300' : 'opacity-0 duration-0'
               }`}
               style={bottomPill.rect ? { left: bottomPill.rect.start, width: bottomPill.rect.size } : undefined}

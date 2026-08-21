@@ -37,7 +37,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       {state && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 backdrop-blur-sm lg:items-center">
           <div
-            className="w-full max-w-sm animate-toast-in rounded-t-3xl border border-white/10 bg-white p-5 shadow-xl dark:border-white/10 dark:bg-slate-800 lg:mb-0 lg:rounded-3xl"
+            className="w-full max-w-sm animate-toast-in rounded-t-3xl border border-white/10 bg-white p-5 shadow-xl dark:border-white/10 dark:bg-[#212327] lg:mb-0 lg:rounded-3xl"
             style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1.25rem)' }}
           >
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{state.title}</h2>
@@ -47,7 +47,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             <div className="mt-5 flex gap-3">
               <button
                 onClick={() => settle(false)}
-                className="flex-1 rounded-full border border-slate-300 px-4 py-3 font-medium text-slate-600 transition-transform duration-150 active:scale-[0.97] dark:border-slate-600 dark:text-slate-300"
+                className="flex-1 rounded-full border border-slate-300 px-4 py-3 font-medium text-slate-600 transition-transform duration-150 active:scale-[0.97] dark:border-[#3a3e45] dark:text-slate-300"
               >
                 {state.cancelLabel ?? 'Cancel'}
               </button>

@@ -111,7 +111,7 @@ export function ExpandingSheet({
         />
         {/* Card-shaped layer: constant border-radius, only opacity ever animates */}
         <div
-          className={`absolute inset-0 rounded-3xl bg-white shadow-2xl shadow-slate-900/30 transition-opacity duration-150 dark:bg-slate-800 ${
+          className={`absolute inset-0 rounded-3xl bg-white shadow-2xl shadow-slate-900/30 transition-opacity duration-150 dark:bg-[#212327] ${
             visible ? 'opacity-100' : 'opacity-0'
           }`}
         />
@@ -122,17 +122,17 @@ export function ExpandingSheet({
             visible ? 'opacity-100 delay-150' : 'opacity-0'
           }`}
         >
-          <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+          <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-[#31343a]">
             <h2 className="font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
             <button
               onClick={onClose}
               aria-label="Close"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-transform duration-150 active:scale-90 dark:bg-slate-700 dark:text-slate-300"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-transform duration-150 active:scale-90 dark:bg-[#2b2e33] dark:text-slate-300"
             >
               <IconClose className="h-4 w-4" />
             </button>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto bg-white dark:bg-slate-800">{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto bg-white dark:bg-[#212327]">{children}</div>
         </div>
       </div>
     </div>,
