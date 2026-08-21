@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { type ComponentType, useEffect, useRef, useState } from 'react'
 import { useTheme } from '../lib/theme'
 import { useNavOrder } from '../lib/navOrder'
 import { useDragReorder } from '../lib/useDragReorder'
+import { useActivePill } from '../lib/useActivePill'
+import { useHeaderHeight } from '../lib/useHeaderHeight'
 import { NAV_ITEMS } from '../lib/navItems'
 import { SegmentedControl } from '../lib/SegmentedControl'
 import { downloadBackup, exportData, parseBackupFile, restoreBackup } from '../lib/backup'
@@ -13,7 +15,16 @@ import { useToast } from '../lib/toast'
 import { useSwipeToDelete } from '../lib/useSwipeToDelete'
 import { clearTrash, listTrash, removeFromTrash, restoreFromTrash } from '../lib/trash'
 import { type Bill, type Category, type Expense, type Income, type TrashEntry } from '../db'
-import { IconClose, IconGripLines } from '../lib/icons'
+import { IconBackup, IconClose, IconGripLines, IconSliders, IconTag, IconTrash } from '../lib/icons'
+
+type SettingsTabKey = 'general' | 'categories' | 'backup' | 'trash'
+
+const SETTINGS_TABS: { key: SettingsTabKey; label: string; icon: ComponentType<{ className?: string }> }[] = [
+  { key: 'general', label: 'General', icon: IconSliders },
+  { key: 'categories', label: 'Categories', icon: IconTag },
+  { key: 'backup', label: 'Backup', icon: IconBackup },
+  { key: 'trash', label: 'Trash', icon: IconTrash },
+]
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -131,6 +142,49 @@ function TrashRow({
   )
 }
 
+// Sticky page-local tab bar, mirroring the app's main glass-pill bottom nav
+// (same border/blur/shadow treatment, same active-pill glide via useActivePill)
+// so switching Settings categories feels like the same nav language, just
+// scoped to this page. Sticks directly beneath the app header via
+// useHeaderHeight rather than a hardcoded offset, since header height varies
+// with the device's safe-area inset and collapses to 0 on desktop.
+function SettingsTabBar({ tab, setTab }: { tab: SettingsTabKey; setTab: (tab: SettingsTabKey) => void }) {
+  const headerHeight = useHeaderHeight()
+  const pill = useActivePill(tab, [])
+
+  return (
+    <div className="sticky z-10" style={{ top: headerHeight }}>
+      <div
+        ref={pill.containerRef}
+        className="relative flex justify-around rounded-full border border-white/60 bg-white/80 px-1 py-1.5 shadow-lg shadow-slate-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/80 dark:shadow-black/40"
+      >
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute inset-y-1 z-0 rounded-full bg-slate-900/[0.06] backdrop-blur-sm transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] dark:bg-white/10 ${
+            pill.rect ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={pill.rect ? { left: pill.rect.start, width: pill.rect.size } : undefined}
+        />
+        {SETTINGS_TABS.map((t) => (
+          <button
+            key={t.key}
+            ref={pill.registerRef(t.key)}
+            onClick={() => setTab(t.key)}
+            className={`relative z-10 flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
+              tab === t.key ? 'text-accent' : 'text-slate-400 dark:text-slate-500'
+            }`}
+          >
+            <t.icon
+              className={`h-5 w-5 transition-transform duration-200 ${tab === t.key ? 'scale-110' : 'scale-100'}`}
+            />
+            <span className="w-full truncate text-center">{t.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Settings() {
   const { mode, setTheme } = useTheme()
   const { order, resetOrder, setOrder } = useNavOrder()
@@ -152,6 +206,7 @@ export default function Settings() {
   const confirmDialog = useConfirm()
   const toast = useToast()
   const [trash, setTrash] = useState<TrashEntry[]>([])
+  const [tab, setTab] = useState<SettingsTabKey>('general')
 
   function reloadTrash() {
     listTrash().then(setTrash)
@@ -245,246 +300,261 @@ export default function Settings() {
     <div className="flex flex-col gap-4 px-4 py-6 lg:mx-auto lg:max-w-xl">
       <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Settings</h1>
 
-      <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <div>
-          <p className="font-medium text-slate-900 dark:text-slate-100">Appearance</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Choose light, dark, or match your device setting.
-          </p>
-        </div>
-        <SegmentedControl
-          value={mode}
-          onChange={setTheme}
-          options={[
-            { value: 'light', label: 'Light' },
-            { value: 'dark', label: 'Dark' },
-            { value: 'system', label: 'System' },
-          ]}
-        />
-      </div>
+      <SettingsTabBar tab={tab} setTab={setTab} />
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="font-medium text-slate-900 dark:text-slate-100">Menu order</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Press and drag a tab to reorder it.</p>
+      {tab === 'general' && (
+        <>
+          <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div>
+              <p className="font-medium text-slate-900 dark:text-slate-100">Appearance</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Choose light, dark, or match your device setting.
+              </p>
+            </div>
+            <SegmentedControl
+              value={mode}
+              onChange={setTheme}
+              options={[
+                { value: 'light', label: 'Light' },
+                { value: 'dark', label: 'Dark' },
+                { value: 'system', label: 'System' },
+              ]}
+            />
           </div>
-          <button onClick={resetOrder} className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400">
-            Reset
-          </button>
-        </div>
-        <MenuOrderList order={order} setOrder={setOrder} />
-      </div>
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <div>
-          <p className="font-medium text-slate-900 dark:text-slate-100">Backup &amp; restore</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            All data lives only on this device. Export a backup file periodically, or before switching phones.
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={handleExport}
-            className="flex-1 rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97] active:opacity-90"
-          >
-            Export data
-          </button>
-          <button
-            onClick={handleImportClick}
-            className="flex-1 rounded-full border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:active:bg-slate-700"
-          >
-            Import data
-          </button>
-        </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="application/json"
-          onChange={handleFileChosen}
-          className="hidden"
-        />
-        {importStatus && <p className="text-sm text-slate-500 dark:text-slate-400">{importStatus}</p>}
-      </div>
-
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <div>
-          <p className="font-medium text-slate-900 dark:text-slate-100">Custom category rules</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Teach the scanner a merchant name so future receipts land in the right category automatically.
-          </p>
-        </div>
-
-        <div className="flex gap-2">
-          <input
-            value={ruleKeyword}
-            onChange={(e) => setRuleKeyword(e.target.value)}
-            placeholder="e.g. Joe's Diner"
-            className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-          />
-          <select
-            value={ruleCategory}
-            onChange={(e) => setRuleCategory(e.target.value as Category)}
-            className="shrink-0 rounded-xl border border-slate-300 bg-white px-2 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-          >
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={handleAddRule}
-            className="shrink-0 rounded-full bg-accent px-3 py-2 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-95 active:opacity-90"
-          >
-            Add
-          </button>
-        </div>
-
-        {rules.length === 0 ? (
-          <p className="text-sm text-slate-400 dark:text-slate-500">No custom rules yet.</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {rules.map((r) => (
-              <li
-                key={r.keyword}
-                className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-slate-700/50"
-              >
-                <span className="min-w-0 truncate text-slate-700 dark:text-slate-200">
-                  <span className="font-medium">{r.keyword}</span> → {r.category}
-                </span>
-                <button
-                  onClick={() => remove(r.keyword)}
-                  className="shrink-0 pl-3 text-red-600 dark:text-red-400"
-                  aria-label={`Remove rule for ${r.keyword}`}
-                >
-                  <IconClose className="h-3.5 w-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <div>
-          <p className="font-medium text-slate-900 dark:text-slate-100">Categories</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Add your own category — it'll show up anywhere you pick a category, including scanning a new expense.
-          </p>
-        </div>
-
-        <div className="flex gap-2">
-          <input
-            value={newCategoryName}
-            onChange={(e) => setNewCategoryName(e.target.value)}
-            placeholder="e.g. Childcare"
-            className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-          />
-          <button
-            onClick={() => {
-              if (!newCategoryName.trim()) return
-              addCategory(newCategoryName)
-              setNewCategoryName('')
-            }}
-            className="shrink-0 rounded-full bg-accent px-3 py-2 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-95 active:opacity-90"
-          >
-            Add
-          </button>
-        </div>
-
-        {userCategories.length > 0 && (
-          <ul className="flex flex-col gap-2">
-            {[...userCategories]
-              .sort((a, b) => a.localeCompare(b))
-              .map((c) => (
-                <li
-                  key={c}
-                  className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-slate-700/50"
-                >
-                  <span className="min-w-0 truncate font-medium text-slate-700 dark:text-slate-200">{c}</span>
-                  <button
-                    onClick={() => removeCategory(c)}
-                    className="shrink-0 pl-3 text-red-600 dark:text-red-400"
-                    aria-label={`Remove category ${c}`}
-                  >
-                    <IconClose className="h-3.5 w-3.5" />
-                  </button>
-                </li>
-              ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <div>
-          <p className="font-medium text-slate-900 dark:text-slate-100">Category budgets</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Set a monthly cap per category to get warned in Summary. Leave blank for no cap.
-          </p>
-        </div>
-
-        <ul className="flex flex-col gap-2">
-          {categories.map((category) => (
-            <li key={category} className="flex items-center justify-between gap-3">
-              <span className="text-sm text-slate-700 dark:text-slate-200">{category}</span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm text-slate-400 dark:text-slate-500">$</span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  step="1"
-                  min="0"
-                  placeholder="No cap"
-                  value={budgetDrafts[category] ?? budgets[category] ?? ''}
-                  onChange={(e) => setBudgetDrafts((prev) => ({ ...prev, [category]: e.target.value }))}
-                  onBlur={(e) => {
-                    const value = e.target.value.trim()
-                    setCategoryBudget(category, value === '' ? undefined : parseFloat(value))
-                    setBudgetDrafts((prev) => {
-                      const next = { ...prev }
-                      delete next[category]
-                      return next
-                    })
-                  }}
-                  className="w-24 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-right text-sm text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-                />
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-medium text-slate-900 dark:text-slate-100">Menu order</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Press and drag a tab to reorder it.</p>
               </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+              <button onClick={resetOrder} className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400">
+                Reset
+              </button>
+            </div>
+            <MenuOrderList order={order} setOrder={setOrder} />
+          </div>
+        </>
+      )}
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <div className="flex items-start justify-between gap-3">
+      {tab === 'backup' && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
           <div>
-            <p className="font-medium text-slate-900 dark:text-slate-100">Deleted items</p>
+            <p className="font-medium text-slate-900 dark:text-slate-100">Backup &amp; restore</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Swipe an item to restore it or delete it forever.
+              All data lives only on this device. Export a backup file periodically, or before switching phones.
             </p>
           </div>
-          {trash.length > 0 && (
+          <div className="flex gap-3">
             <button
-              onClick={handleClearTrash}
-              className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400"
+              onClick={handleExport}
+              className="flex-1 rounded-full bg-accent px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97] active:opacity-90"
             >
-              Delete all
+              Export data
             </button>
+            <button
+              onClick={handleImportClick}
+              className="flex-1 rounded-full border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 transition-transform duration-150 active:scale-[0.97] active:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:active:bg-slate-700"
+            >
+              Import data
+            </button>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json"
+            onChange={handleFileChosen}
+            className="hidden"
+          />
+          {importStatus && <p className="text-sm text-slate-500 dark:text-slate-400">{importStatus}</p>}
+        </div>
+      )}
+
+      {tab === 'categories' && (
+        <>
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div>
+              <p className="font-medium text-slate-900 dark:text-slate-100">Custom category rules</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Teach the scanner a merchant name so future receipts land in the right category automatically.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                value={ruleKeyword}
+                onChange={(e) => setRuleKeyword(e.target.value)}
+                placeholder="e.g. Joe's Diner"
+                className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              />
+              <select
+                value={ruleCategory}
+                onChange={(e) => setRuleCategory(e.target.value as Category)}
+                className="shrink-0 rounded-xl border border-slate-300 bg-white px-2 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              >
+                {categories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleAddRule}
+                className="shrink-0 rounded-full bg-accent px-3 py-2 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-95 active:opacity-90"
+              >
+                Add
+              </button>
+            </div>
+
+            {rules.length === 0 ? (
+              <p className="text-sm text-slate-400 dark:text-slate-500">No custom rules yet.</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {rules.map((r) => (
+                  <li
+                    key={r.keyword}
+                    className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-slate-700/50"
+                  >
+                    <span className="min-w-0 truncate text-slate-700 dark:text-slate-200">
+                      <span className="font-medium">{r.keyword}</span> → {r.category}
+                    </span>
+                    <button
+                      onClick={() => remove(r.keyword)}
+                      className="shrink-0 pl-3 text-red-600 dark:text-red-400"
+                      aria-label={`Remove rule for ${r.keyword}`}
+                    >
+                      <IconClose className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div>
+              <p className="font-medium text-slate-900 dark:text-slate-100">Categories</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Add your own category — it'll show up anywhere you pick a category, including scanning a new
+                expense.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="e.g. Childcare"
+                className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              />
+              <button
+                onClick={() => {
+                  if (!newCategoryName.trim()) return
+                  addCategory(newCategoryName)
+                  setNewCategoryName('')
+                }}
+                className="shrink-0 rounded-full bg-accent px-3 py-2 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-95 active:opacity-90"
+              >
+                Add
+              </button>
+            </div>
+
+            {userCategories.length > 0 && (
+              <ul className="flex flex-col gap-2">
+                {[...userCategories]
+                  .sort((a, b) => a.localeCompare(b))
+                  .map((c) => (
+                    <li
+                      key={c}
+                      className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-slate-700/50"
+                    >
+                      <span className="min-w-0 truncate font-medium text-slate-700 dark:text-slate-200">{c}</span>
+                      <button
+                        onClick={() => removeCategory(c)}
+                        className="shrink-0 pl-3 text-red-600 dark:text-red-400"
+                        aria-label={`Remove category ${c}`}
+                      >
+                        <IconClose className="h-3.5 w-3.5" />
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <div>
+              <p className="font-medium text-slate-900 dark:text-slate-100">Category budgets</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Set a monthly cap per category to get warned in Summary. Leave blank for no cap.
+              </p>
+            </div>
+
+            <ul className="flex flex-col gap-2">
+              {categories.map((category) => (
+                <li key={category} className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-slate-700 dark:text-slate-200">{category}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm text-slate-400 dark:text-slate-500">$</span>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="1"
+                      min="0"
+                      placeholder="No cap"
+                      value={budgetDrafts[category] ?? budgets[category] ?? ''}
+                      onChange={(e) => setBudgetDrafts((prev) => ({ ...prev, [category]: e.target.value }))}
+                      onBlur={(e) => {
+                        const value = e.target.value.trim()
+                        setCategoryBudget(category, value === '' ? undefined : parseFloat(value))
+                        setBudgetDrafts((prev) => {
+                          const next = { ...prev }
+                          delete next[category]
+                          return next
+                        })
+                      }}
+                      className="w-24 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-right text-sm text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      )}
+
+      {tab === 'trash' && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-medium text-slate-900 dark:text-slate-100">Deleted items</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Swipe an item to restore it or delete it forever.
+              </p>
+            </div>
+            {trash.length > 0 && (
+              <button
+                onClick={handleClearTrash}
+                className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400"
+              >
+                Delete all
+              </button>
+            )}
+          </div>
+
+          {trash.length === 0 ? (
+            <p className="text-sm text-slate-400 dark:text-slate-500">Nothing deleted recently.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {trash.map((entry) => (
+                <li key={entry.id}>
+                  <TrashRow entry={entry} onRestore={handleRestore} onDeleteForever={handleDeleteForever} />
+                </li>
+              ))}
+            </ul>
           )}
         </div>
-
-        {trash.length === 0 ? (
-          <p className="text-sm text-slate-400 dark:text-slate-500">Nothing deleted recently.</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {trash.map((entry) => (
-              <li key={entry.id}>
-                <TrashRow entry={entry} onRestore={handleRestore} onDeleteForever={handleDeleteForever} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      )}
     </div>
   )
 }

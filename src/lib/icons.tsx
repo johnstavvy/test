@@ -169,3 +169,47 @@ export function IconGripLines({ className }: IconProps) {
     </svg>
   )
 }
+
+export function IconSliders({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <line x1="6" y1="4" x2="6" y2="20" />
+      <circle cx="6" cy="9" r="1.6" />
+      <line x1="12" y1="4" x2="12" y2="20" />
+      <circle cx="12" cy="15" r="1.6" />
+      <line x1="18" y1="4" x2="18" y2="20" />
+      <circle cx="18" cy="7" r="1.6" />
+    </svg>
+  )
+}
+
+export function IconTag({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M11.5 3.5H5.5a2 2 0 0 0-2 2v6l9.5 9.5a2 2 0 0 0 2.8 0l5.2-5.2a2 2 0 0 0 0-2.8L11.5 3.5Z" />
+      <circle cx="8" cy="8" r="1.3" />
+    </svg>
+  )
+}
+
+export function IconBackup({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M7 16.5a3.5 3.5 0 0 1-.5-6.96A4.5 4.5 0 0 1 15.1 7.4a3.7 3.7 0 0 1 3.4 3.68 3.2 3.2 0 0 1-.9 6.42H7Z" />
+      <line x1="12" y1="17" x2="12" y2="10.5" />
+      <path d="M9.3 13 12 10.3 14.7 13" />
+    </svg>
+  )
+}
+
+export function IconTrash({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M5 7h14" />
+      <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+      <path d="M7 7l1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13" />
+      <line x1="10" y1="11" x2="10" y2="17" />
+      <line x1="14" y1="11" x2="14" y2="17" />
+    </svg>
+  )
+}
