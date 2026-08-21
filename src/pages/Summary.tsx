@@ -6,6 +6,7 @@ import { listBills, totalMonthlyBills } from '../lib/bills'
 import { listIncomes, totalMonthlyIncome } from '../lib/income'
 import { currentMonthKey } from '../lib/week'
 import { useGrowIn } from '../lib/useGrowIn'
+import { useCategoryBudgets } from '../lib/categoryBudgets'
 import { IconAlertTriangle, IconChart } from '../lib/icons'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
@@ -77,6 +78,51 @@ function monthLabel(key: string) {
   })
 }
 
+// Like BarList, but a row with a configured category budget (Settings → Category
+// budgets) shows progress against its own cap instead of a bar scaled to the
+// largest category — own denominator, own over/nearing color, like MonthlyBudget.
+function CategoryBarList({ rows }: { rows: { label: string; total: number; cap?: number }[] }) {
+  const max = Math.max(...rows.map((r) => r.total), 1)
+  const { grown, settled } = useGrowIn(1250)
+  const durationClass = settled ? 'duration-300' : 'duration-[1250ms] ease-out'
+
+  return (
+    <ul className="flex flex-col gap-3">
+      {rows.map((r) => {
+        const hasCap = r.cap !== undefined && r.cap > 0
+        const pct = hasCap ? r.total / r.cap! : 0
+        const over = hasCap && r.total > r.cap!
+        const nearing = hasCap && !over && pct >= 0.85
+        const widthPct = grown
+          ? hasCap
+            ? Math.min(Math.max(pct * 100, r.total > 0 ? 4 : 0), 100)
+            : Math.max((r.total / max) * 100, 4)
+          : 0
+        const barColor = over ? 'bg-rose-500' : nearing ? 'bg-amber-500' : 'bg-accent'
+
+        return (
+          <li key={r.label}>
+            <div className="mb-1 flex items-baseline justify-between text-sm">
+              <span className="font-medium text-slate-700 dark:text-slate-300">{r.label}</span>
+              <span
+                className={`tabular-nums ${over ? 'font-semibold text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400'}`}
+              >
+                {hasCap ? `${currency.format(r.total)} of ${currency.format(r.cap!)}` : currency.format(r.total)}
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+              <div
+                className={`h-full rounded-full ${barColor} transition-all ${durationClass}`}
+                style={{ width: `${widthPct}%` }}
+              />
+            </div>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 function BarList({ rows }: { rows: { label: string; total: number }[] }) {
   const max = Math.max(...rows.map((r) => r.total), 1)
   const { grown, settled } = useGrowIn(1250)
@@ -104,6 +150,7 @@ export default function Summary() {
   const [expenses, setExpenses] = useState<Expense[] | null>(null)
   const [bills, setBills] = useState<Bill[] | null>(null)
   const [incomes, setIncomes] = useState<Income[] | null>(null)
+  const { budgets } = useCategoryBudgets()
 
   useEffect(() => {
     listExpenses().then(setExpenses)
@@ -137,7 +184,11 @@ export default function Summary() {
 
   const monthKey = currentMonthKey()
   const thisMonthExpenses = expenses.filter((e) => e.date.startsWith(monthKey))
-  const byCategory = totalsByCategory(thisMonthExpenses).map((c) => ({ label: c.category, total: c.total }))
+  const byCategory = totalsByCategory(thisMonthExpenses).map((c) => ({
+    label: c.category,
+    total: c.total,
+    cap: budgets[c.category],
+  }))
   const byMonth = totalsByMonth(expenses)
     .slice(0, 6)
     .map((m) => ({ label: monthLabel(m.month), total: m.total }))
@@ -152,7 +203,7 @@ export default function Summary() {
             By Category · This Month
           </h2>
           {byCategory.length > 0 ? (
-            <BarList rows={byCategory} />
+            <CategoryBarList rows={byCategory} />
           ) : (
             <p className="text-sm text-slate-400 dark:text-slate-500">No expenses logged this month yet.</p>
           )}

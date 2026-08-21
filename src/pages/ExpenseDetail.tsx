@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { CATEGORIES, db, type Category, type Expense } from '../db'
+import { db, type Category, type Expense } from '../db'
 import { deleteExpense, updateExpense } from '../lib/expenses'
 import { guessCategory } from '../lib/categorize'
 import { addCustomRule } from '../lib/customCategories'
+import { useCategories } from '../lib/userCategories'
 import { useToast } from '../lib/toast'
 import { addToTrash, removeFromTrash } from '../lib/trash'
 
@@ -14,6 +15,7 @@ export default function ExpenseDetail() {
   const [expense, setExpense] = useState<Expense | null>(null)
   const [saving, setSaving] = useState(false)
   const [rememberCategory, setRememberCategory] = useState(true)
+  const { categories } = useCategories()
 
   useEffect(() => {
     if (!id) return
@@ -118,7 +120,7 @@ export default function ExpenseDetail() {
           onChange={(e) => set('category', e.target.value as Category)}
           className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         >
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>

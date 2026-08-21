@@ -1,4 +1,4 @@
-import { db, type Expense } from '../db'
+import { db, type Category, type Expense } from '../db'
 
 export type NewExpense = Omit<Expense, 'id' | 'createdAt'>
 
@@ -19,7 +19,7 @@ export function listExpenses() {
 }
 
 export function totalsByCategory(expenses: Expense[]) {
-  const totals = new Map<string, number>()
+  const totals = new Map<Category, number>()
   for (const e of expenses) {
     totals.set(e.category, (totals.get(e.category) ?? 0) + e.total)
   }

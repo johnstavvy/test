@@ -3,8 +3,11 @@ import { getPeopleNames, setPersonName } from './people'
 import { getCustomRules, setCustomRules, type CategoryRule } from './customCategories'
 import { getStoredNavOrder, setStoredNavOrder } from './navOrder'
 import { getStoredTheme, setStoredTheme } from './theme'
+import { getCategoryBudgets, setCategoryBudgets, type CategoryBudgets } from './categoryBudgets'
+import { getUserCategories, setUserCategories } from './userCategories'
+import type { Category } from '../db'
 
-const BACKUP_VERSION = 2
+const BACKUP_VERSION = 4
 
 export interface BackupData {
   version: number
@@ -18,6 +21,10 @@ export interface BackupData {
   customCategoryRules?: CategoryRule[]
   navOrder?: string[]
   theme?: 'light' | 'dark' | 'system'
+  // Added in v3.
+  categoryBudgets?: CategoryBudgets
+  // Added in v4.
+  userCategories?: Category[]
 }
 
 export async function exportData(): Promise<BackupData> {
@@ -36,6 +43,8 @@ export async function exportData(): Promise<BackupData> {
     customCategoryRules: getCustomRules(),
     navOrder: getStoredNavOrder(),
     theme: getStoredTheme(),
+    categoryBudgets: getCategoryBudgets(),
+    userCategories: getUserCategories(),
   }
 }
 
@@ -92,4 +101,6 @@ export async function restoreBackup(data: BackupData) {
   if (data.customCategoryRules) setCustomRules(data.customCategoryRules)
   if (data.navOrder) setStoredNavOrder(data.navOrder)
   if (data.theme) setStoredTheme(data.theme)
+  if (data.categoryBudgets) setCategoryBudgets(data.categoryBudgets)
+  if (data.userCategories) setUserCategories(data.userCategories)
 }

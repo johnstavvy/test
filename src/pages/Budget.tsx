@@ -7,6 +7,7 @@ import {
   dueLabel,
   effectiveAmount,
   isBillPaidThisMonth,
+  isPastDueThisMonth,
   listBills,
   ordinal,
   setBillPaidThisMonth,
@@ -65,12 +66,35 @@ function FrequencyToggle({ recurring, onChange }: { recurring: boolean; onChange
   )
 }
 
+function AutoPayToggle({ autoPay, onChange }: { autoPay: boolean; onChange: (autoPay: boolean) => void }) {
+  return (
+    <SegmentedControl
+      value={autoPay}
+      onChange={onChange}
+      options={[
+        { value: false, label: 'Manual' },
+        { value: true, label: 'Auto-pay' },
+      ]}
+    />
+  )
+}
+
 // ---------- Bills ----------
 
 type BillDraft = Omit<Bill, 'id' | 'createdAt'>
 
 function emptyBillDraft(category: BillCategory = 'Other', person: 1 | 2 = 1): BillDraft {
-  return { name: '', category, amount: 0, dueDay: 1, person, paymentSource: '', recurring: true, notes: '' }
+  return {
+    name: '',
+    category,
+    amount: 0,
+    dueDay: 1,
+    person,
+    paymentSource: '',
+    recurring: true,
+    autoPay: false,
+    notes: '',
+  }
 }
 
 type BillGroupKey = 'home' | 'vehicles' | 'subscriptions'
@@ -174,6 +198,11 @@ function BillForm({
         <FrequencyToggle recurring={isRecurring(draft)} onChange={(recurring) => set('recurring', recurring)} />
       </label>
 
+      <label className={labelClass}>
+        Payment
+        <AutoPayToggle autoPay={draft.autoPay ?? false} onChange={(autoPay) => set('autoPay', autoPay)} />
+      </label>
+
       <div className="flex gap-3">
         <label className={`flex-1 ${labelClass}`}>
           Amount ($)
@@ -258,6 +287,15 @@ function FrequencyBadge({ recurring, compact }: { recurring: boolean; compact?: 
   )
 }
 
+function AutoPayBadge({ compact }: { compact?: boolean }) {
+  const size = compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-xs'
+  return (
+    <span className={`rounded-full bg-sky-100 font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-400 ${size}`}>
+      Auto-pay
+    </span>
+  )
+}
+
 function TagBadge({ children, compact }: { children: string; compact?: boolean }) {
   const size = compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-xs'
   return (
@@ -318,6 +356,7 @@ function BillListItem({
           <PaidToggle paid={paid} onToggle={onTogglePaid} compact />
         </div>
         <FrequencyBadge recurring={isRecurring(bill)} compact />
+        {bill.autoPay && <AutoPayBadge compact />}
         {bill.paymentSource && <TagBadge compact>{bill.paymentSource}</TagBadge>}
         <span
           className={`truncate text-[11px] ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}
@@ -347,6 +386,7 @@ function BillListItem({
           {bill.category}
         </span>
         <FrequencyBadge recurring={isRecurring(bill)} />
+        {bill.autoPay && <AutoPayBadge />}
         {bill.paymentSource && <TagBadge>{bill.paymentSource}</TagBadge>}
         <span className={`text-xs ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}>
           {paid ? 'Paid this month' : dueLabel(days, bill.dueDay)}
@@ -379,7 +419,12 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
       groups[group.key].push(bill)
     }
     for (const key of Object.keys(groups) as BillGroupKey[]) {
-      groups[key].sort((a, b) => daysUntilDue(a.dueDay) - daysUntilDue(b.dueDay))
+      groups[key].sort((a, b) => {
+        const aSettled = a.autoPay && isPastDueThisMonth(a) ? 1 : 0
+        const bSettled = b.autoPay && isPastDueThisMonth(b) ? 1 : 0
+        if (aSettled !== bSettled) return aSettled - bSettled
+        return daysUntilDue(a.dueDay) - daysUntilDue(b.dueDay)
+      })
     }
     return groups
   }, [bills])
@@ -456,6 +501,7 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
                     person: personOf(editingBill),
                     paymentSource: editingBill.paymentSource,
                     recurring: isRecurring(editingBill),
+                    autoPay: editingBill.autoPay ?? false,
                     notes: editingBill.notes,
                   }}
                   names={names}
@@ -586,6 +632,7 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
                         dueDay: bill.dueDay,
                         paymentSource: bill.paymentSource,
                         recurring: isRecurring(bill),
+                        autoPay: bill.autoPay ?? false,
                         notes: bill.notes,
                       }}
                       names={names}

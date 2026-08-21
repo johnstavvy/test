@@ -16,8 +16,24 @@ export function deleteBill(id: number) {
   return db.bills.delete(id)
 }
 
-export function listBills() {
-  return db.bills.orderBy('dueDay').toArray()
+// Auto-pay bills that are now past due for the first time this month get marked paid
+// automatically (autoPaySyncedMonths guards this so a manual uncheck afterward sticks —
+// without it, every reload would re-flip an unchecked bill back to paid).
+export async function listBills() {
+  const bills = await db.bills.orderBy('dueDay').toArray()
+  const today = new Date()
+  const key = monthKey(today)
+  const toSync = bills.filter((b) => b.autoPay && isPastDueThisMonth(b, today) && !isAutoPaySynced(b, today))
+  await Promise.all(
+    toSync.map(async (b) => {
+      const paidMonths = b.paidMonths?.includes(key) ? b.paidMonths : [...(b.paidMonths ?? []), key]
+      const autoPaySyncedMonths = [...(b.autoPaySyncedMonths ?? []), key]
+      await db.bills.update(b.id, { paidMonths, autoPaySyncedMonths })
+      b.paidMonths = paidMonths
+      b.autoPaySyncedMonths = autoPaySyncedMonths
+    }),
+  )
+  return bills
 }
 
 // Midnight of this bill's due day in the current month, clamped to the month's length.
@@ -28,15 +44,21 @@ export function dueDateThisMonth(dueDay: number, today = new Date()) {
   return due
 }
 
+// True starting the day after this bill's due date this month.
+export function isPastDueThisMonth(bill: Bill, today = new Date()) {
+  const due = dueDateThisMonth(bill.dueDay, today)
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  return start > due
+}
+
 // Non-recurring bills (e.g. a variable electric/gas/water bill) auto-zero the day after their
 // due date passes, as long as the amount hasn't been re-entered since — a nudge to plug in the
 // new amount once the next bill arrives, without deleting the entry or losing its due day/category.
 export function effectiveAmount(bill: Bill, today = new Date()) {
   if (isRecurring(bill)) return bill.amount
   const due = dueDateThisMonth(bill.dueDay, today)
-  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate())
   const lastTouched = bill.updatedAt ?? bill.createdAt
-  return start > due && lastTouched < due.getTime() ? 0 : bill.amount
+  return isPastDueThisMonth(bill, today) && lastTouched < due.getTime() ? 0 : bill.amount
 }
 
 export function totalMonthlyBills(bills: Bill[]) {
@@ -49,6 +71,10 @@ function monthKey(today = new Date()) {
 
 export function isBillPaidThisMonth(bill: Bill, today = new Date()) {
   return bill.paidMonths?.includes(monthKey(today)) ?? false
+}
+
+function isAutoPaySynced(bill: Bill, today = new Date()) {
+  return bill.autoPaySyncedMonths?.includes(monthKey(today)) ?? false
 }
 
 // Toggling paid doesn't touch `amount`/`updatedAt` — it's independent of the

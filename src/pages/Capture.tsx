@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CATEGORIES, type Category } from '../db'
+import { type Category } from '../db'
 import { cropDataUrl, fileToResizedDataUrl, videoFrameToResizedDataUrl, type CropRect } from '../lib/image'
 import { recognizeReceiptText } from '../lib/ocr'
 import { parseReceiptText } from '../lib/parseReceipt'
 import { guessCategory } from '../lib/categorize'
 import { addCustomRule } from '../lib/customCategories'
+import { useCategories } from '../lib/userCategories'
 import { addExpense } from '../lib/expenses'
 import { IconClose, IconFlash, IconReceipt } from '../lib/icons'
 import { ReceiptCropper } from '../lib/ReceiptCropper'
@@ -26,6 +27,7 @@ function todayIso() {
 export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
   const navigate = useNavigate()
   const toast = useToast()
+  const { categories } = useCategories()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -397,7 +399,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
           }}
           className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
         >
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <option key={c} value={c}>
               {c}
             </option>

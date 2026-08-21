@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CATEGORIES, db, type Expense } from '../db'
+import { db, type Expense } from '../db'
 import { deleteExpense, listExpenses } from '../lib/expenses'
 import { dateFromIso, isoDate, mondayOf } from '../lib/week'
 import { IconChevronDown, IconReceipt, IconScan, IconSearch } from '../lib/icons'
 import { useSwipeToDelete } from '../lib/useSwipeToDelete'
 import { useToast } from '../lib/toast'
+import { useCategories } from '../lib/userCategories'
 import { addToTrash, removeFromTrash } from '../lib/trash'
 import { ExpandingSheet } from '../lib/expandingSheet'
 import Capture from './Capture'
@@ -21,6 +22,12 @@ const CATEGORY_COLORS: Record<string, string> = {
   Health: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400',
   Entertainment: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400',
   Travel: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-400',
+  'Personal Care': 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400',
+  'Home & Garden': 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400',
+  Pets: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+  Education: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400',
+  'Gifts & Donations': 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-400',
+  'Fees & Charges': 'bg-stone-100 text-stone-700 dark:bg-stone-800/60 dark:text-stone-400',
   Other: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
 }
 
@@ -134,6 +141,7 @@ export default function Expenses() {
   const [originRect, setOriginRect] = useState<DOMRect | null>(null)
   const pillRef = useRef<HTMLButtonElement>(null)
   const toast = useToast()
+  const { categories } = useCategories()
 
   useEffect(() => {
     listExpenses().then(setExpenses)
@@ -235,7 +243,7 @@ export default function Expenses() {
               className="shrink-0 rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
             >
               <option value="All">All categories</option>
-              {CATEGORIES.map((c) => (
+              {categories.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>

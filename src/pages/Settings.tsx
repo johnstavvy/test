@@ -6,11 +6,13 @@ import { NAV_ITEMS } from '../lib/navItems'
 import { SegmentedControl } from '../lib/SegmentedControl'
 import { downloadBackup, exportData, parseBackupFile, restoreBackup } from '../lib/backup'
 import { useCustomRules } from '../lib/customCategories'
+import { useCategoryBudgets } from '../lib/categoryBudgets'
+import { useCategories } from '../lib/userCategories'
 import { useConfirm } from '../lib/confirm'
 import { useToast } from '../lib/toast'
 import { useSwipeToDelete } from '../lib/useSwipeToDelete'
 import { clearTrash, listTrash, removeFromTrash, restoreFromTrash } from '../lib/trash'
-import { CATEGORIES, type Bill, type Category, type Expense, type Income, type TrashEntry } from '../db'
+import { type Bill, type Category, type Expense, type Income, type TrashEntry } from '../db'
 import { IconClose, IconGripLines } from '../lib/icons'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
@@ -135,8 +137,18 @@ export default function Settings() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importStatus, setImportStatus] = useState<string | null>(null)
   const { rules, add, remove, refresh: refreshRules } = useCustomRules()
+  const { budgets, set: setCategoryBudget, refresh: refreshBudgets } = useCategoryBudgets()
+  const {
+    categories,
+    userCategories,
+    add: addCategory,
+    remove: removeCategory,
+    refresh: refreshCategories,
+  } = useCategories()
+  const [budgetDrafts, setBudgetDrafts] = useState<Partial<Record<Category, string>>>({})
   const [ruleKeyword, setRuleKeyword] = useState('')
-  const [ruleCategory, setRuleCategory] = useState<Category>(CATEGORIES[0])
+  const [ruleCategory, setRuleCategory] = useState<Category>(categories[0])
+  const [newCategoryName, setNewCategoryName] = useState('')
   const confirmDialog = useConfirm()
   const toast = useToast()
   const [trash, setTrash] = useState<TrashEntry[]>([])
@@ -202,6 +214,8 @@ export default function Settings() {
       if (data.navOrder) setOrder(data.navOrder)
       if (data.theme) setTheme(data.theme)
       refreshRules()
+      refreshBudgets()
+      refreshCategories()
       setImportStatus(`Imported ${summary}.`)
       toast.show({
         message: 'Backup imported',
@@ -211,6 +225,8 @@ export default function Settings() {
           if (previous.navOrder) setOrder(previous.navOrder)
           if (previous.theme) setTheme(previous.theme)
           refreshRules()
+          refreshBudgets()
+          refreshCategories()
           setImportStatus(null)
         },
       })
@@ -293,6 +309,54 @@ export default function Settings() {
 
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <div>
+          <p className="font-medium text-slate-900 dark:text-slate-100">Categories</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Add your own category — it'll show up anywhere you pick a category, including scanning a new expense.
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <input
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+            placeholder="e.g. Childcare"
+            className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          />
+          <button
+            onClick={() => {
+              if (!newCategoryName.trim()) return
+              addCategory(newCategoryName)
+              setNewCategoryName('')
+            }}
+            className="shrink-0 rounded-full bg-accent px-3 py-2 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-95 active:opacity-90"
+          >
+            Add
+          </button>
+        </div>
+
+        {userCategories.length > 0 && (
+          <ul className="flex flex-col gap-2">
+            {userCategories.map((c) => (
+              <li
+                key={c}
+                className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-slate-700/50"
+              >
+                <span className="min-w-0 truncate font-medium text-slate-700 dark:text-slate-200">{c}</span>
+                <button
+                  onClick={() => removeCategory(c)}
+                  className="shrink-0 pl-3 text-red-600 dark:text-red-400"
+                  aria-label={`Remove category ${c}`}
+                >
+                  <IconClose className="h-3.5 w-3.5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div>
           <p className="font-medium text-slate-900 dark:text-slate-100">Custom category rules</p>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Teach the scanner a merchant name so future receipts land in the right category automatically.
@@ -311,7 +375,7 @@ export default function Settings() {
             onChange={(e) => setRuleCategory(e.target.value as Category)}
             className="shrink-0 rounded-xl border border-slate-300 bg-white px-2 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
           >
-            {CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
@@ -348,6 +412,45 @@ export default function Settings() {
             ))}
           </ul>
         )}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div>
+          <p className="font-medium text-slate-900 dark:text-slate-100">Category budgets</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Set a monthly cap per category to get warned in Summary. Leave blank for no cap.
+          </p>
+        </div>
+
+        <ul className="flex flex-col gap-2">
+          {categories.map((category) => (
+            <li key={category} className="flex items-center justify-between gap-3">
+              <span className="text-sm text-slate-700 dark:text-slate-200">{category}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm text-slate-400 dark:text-slate-500">$</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="1"
+                  min="0"
+                  placeholder="No cap"
+                  value={budgetDrafts[category] ?? budgets[category] ?? ''}
+                  onChange={(e) => setBudgetDrafts((prev) => ({ ...prev, [category]: e.target.value }))}
+                  onBlur={(e) => {
+                    const value = e.target.value.trim()
+                    setCategoryBudget(category, value === '' ? undefined : parseFloat(value))
+                    setBudgetDrafts((prev) => {
+                      const next = { ...prev }
+                      delete next[category]
+                      return next
+                    })
+                  }}
+                  className="w-24 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-right text-sm text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
