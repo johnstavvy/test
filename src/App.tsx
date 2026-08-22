@@ -42,24 +42,36 @@ function BottomBarItem({
   )
 }
 
-function useScrolledPastTop(threshold = 16) {
-  const [scrolled, setScrolled] = useState(false)
+// Instagram-style nav bar: shrinks while scrolling down, restores as soon as
+// scrolling reverses upward (not only once back at the very top).
+function useNavShrink(threshold = 16, directionDeadZone = 4) {
+  const [shrunk, setShrunk] = useState(false)
 
   useEffect(() => {
+    let lastY = window.scrollY
     let ticking = false
     function onScroll() {
       if (ticking) return
       ticking = true
       requestAnimationFrame(() => {
-        setScrolled(window.scrollY > threshold)
+        const y = window.scrollY
+        const delta = y - lastY
+        if (y <= threshold) {
+          setShrunk(false)
+        } else if (delta > directionDeadZone) {
+          setShrunk(true)
+        } else if (delta < -directionDeadZone) {
+          setShrunk(false)
+        }
+        lastY = y
         ticking = false
       })
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
-  }, [threshold])
+  }, [threshold, directionDeadZone])
 
-  return scrolled
+  return shrunk
 }
 
 function SidebarItem({ item }: { item: (typeof NAV_ITEMS)[number] }) {
@@ -81,7 +93,7 @@ function SidebarItem({ item }: { item: (typeof NAV_ITEMS)[number] }) {
 
 export default function App() {
   const location = useLocation()
-  const scrolled = useScrolledPastTop()
+  const scrolled = useNavShrink()
   const { order } = useNavOrder()
 
   const orderedItems = order.map((to) => NAV_ITEMS.find((item) => item.to === to)!).filter(Boolean)
@@ -124,25 +136,29 @@ export default function App() {
           </div>
         </main>
 
-        <nav
-          className={`fixed inset-x-4 z-40 mx-auto max-w-md origin-bottom rounded-full border border-white/60 bg-white/70 shadow-lg shadow-slate-900/10 backdrop-blur-xl transition-transform duration-300 ease-out dark:border-white/10 dark:bg-[#1b1d20]/70 dark:shadow-black/40 lg:hidden ${
-            scrolled ? 'scale-75' : 'scale-100'
-          }`}
-          style={{ bottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
+        <div
+          className="sticky bottom-0 z-40 px-4 lg:hidden"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
         >
-          <div ref={bottomPill.containerRef} className="relative flex justify-around px-1 py-1.5">
-            <div
-              aria-hidden
-              className={`pointer-events-none absolute inset-y-1 z-0 rounded-full bg-slate-900/[0.06] backdrop-blur-sm transition-all ease-[cubic-bezier(0.34,1.56,0.64,1)] dark:bg-[#2d3036] ${
-                bottomPill.rect ? 'opacity-100 duration-300' : 'opacity-0 duration-0'
-              }`}
-              style={bottomPill.rect ? { left: bottomPill.rect.start, width: bottomPill.rect.size } : undefined}
-            />
-            {orderedItems.map((item) => (
-              <BottomBarItem key={item.to} item={item} pillRef={bottomPill.registerRef(item.to)} />
-            ))}
-          </div>
-        </nav>
+          <nav
+            className={`mx-auto max-w-md origin-bottom rounded-full border border-white/60 bg-white/70 shadow-lg shadow-slate-900/10 backdrop-blur-xl transition-transform duration-300 ease-out dark:border-white/10 dark:bg-[#1b1d20]/70 dark:shadow-black/40 ${
+              scrolled ? 'scale-75' : 'scale-100'
+            }`}
+          >
+            <div ref={bottomPill.containerRef} className="relative flex justify-around px-1 py-1.5">
+              <div
+                aria-hidden
+                className={`pointer-events-none absolute inset-y-1 z-0 rounded-full bg-slate-900/[0.06] backdrop-blur-sm transition-all ease-[cubic-bezier(0.34,1.56,0.64,1)] dark:bg-[#2d3036] ${
+                  bottomPill.rect ? 'opacity-100 duration-300' : 'opacity-0 duration-0'
+                }`}
+                style={bottomPill.rect ? { left: bottomPill.rect.start, width: bottomPill.rect.size } : undefined}
+              />
+              {orderedItems.map((item) => (
+                <BottomBarItem key={item.to} item={item} pillRef={bottomPill.registerRef(item.to)} />
+              ))}
+            </div>
+          </nav>
+        </div>
       </div>
     </div>
   )
