@@ -212,7 +212,7 @@ export default function Expenses() {
       </ExpandingSheet>
 
       <div className="flex flex-col gap-4 px-4 py-6">
-        <div className="sticky top-[calc(env(safe-area-inset-top)+3.75rem)] z-30 -mx-4 flex justify-center bg-slate-50/90 px-4 py-2 backdrop-blur-lg dark:bg-[#1b1d20]/90 lg:static lg:mx-0 lg:bg-transparent lg:px-0 lg:py-0 lg:backdrop-blur-none">
+        <div className="flex justify-center py-2">
           <button
             ref={pillRef}
             onClick={openAddExpense}
