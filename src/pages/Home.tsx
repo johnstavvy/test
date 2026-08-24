@@ -330,7 +330,7 @@ export default function Home() {
 
   const weekTotal = days.reduce((sum, day) => sum + dailyTotals[day], 0)
   const maxValue = Math.max(...days.map((d) => dailyTotals[d]), 1)
-  const recent = expenses?.slice(0, 5) ?? []
+  const recent = useMemo(() => expenses?.slice(0, 5) ?? [], [expenses])
 
   const recentGroups = useMemo(() => {
     const map = new Map<string, Expense[]>()
