@@ -161,7 +161,7 @@ function SettingsTabBar({ tab, setTab }: { tab: SettingsTabKey; setTab: (tab: Se
     <div className="sticky z-10" style={{ top: headerHeight }}>
       <div
         ref={pill.containerRef}
-        className="relative flex justify-around rounded-full border border-slate-900/10 bg-white/92 px-1 py-1.5 shadow-lg shadow-slate-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-[#1b1d20]/92 dark:shadow-black/40"
+        className="relative flex justify-around overflow-hidden rounded-full border border-slate-900/10 bg-white/92 px-1 py-1.5 shadow-lg shadow-slate-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-[#1b1d20]/92 dark:shadow-black/40"
       >
         <div
           aria-hidden

@@ -116,7 +116,7 @@ export default function App() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-50 dark:bg-[#17181b] lg:mx-0 lg:max-w-none lg:flex-row">
-      <aside className="hidden lg:sticky lg:top-4 lg:m-4 lg:flex lg:h-[calc(100vh-2rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-1 lg:rounded-3xl lg:border lg:border-white/60 lg:bg-white/70 lg:p-4 lg:shadow-lg lg:shadow-slate-900/10 lg:backdrop-blur-xl dark:lg:border-white/10 dark:lg:bg-[#1b1d20]/70 dark:lg:shadow-black/40">
+      <aside className="hidden lg:sticky lg:top-4 lg:m-4 lg:flex lg:h-[calc(100vh-2rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-1 lg:overflow-hidden lg:rounded-3xl lg:border lg:border-white/60 lg:bg-white/70 lg:p-4 lg:shadow-lg lg:shadow-slate-900/10 lg:backdrop-blur-xl dark:lg:border-white/10 dark:lg:bg-[#1b1d20]/70 dark:lg:shadow-black/40">
         <div className="flex items-center gap-2 px-3 pb-4 pt-1">
           <img src={logo} alt="" className="h-7 w-7 rounded-lg" />
           <span className="font-semibold text-slate-900 dark:text-slate-100">Pecunia</span>
@@ -161,7 +161,7 @@ export default function App() {
             className="pointer-events-none absolute inset-x-0 bottom-full h-8 bg-gradient-to-b from-transparent to-slate-50 dark:to-[#17181b]"
           />
           <nav
-            className={`relative mx-auto flex max-w-md items-center gap-1.5 rounded-full border border-slate-900/10 bg-white/92 p-1.5 shadow-lg shadow-slate-900/10 backdrop-blur-xl transition-all duration-300 ease-out dark:border-white/10 dark:bg-[#1b1d20]/92 dark:shadow-black/40 ${
+            className={`relative mx-auto flex max-w-md items-center gap-1.5 overflow-hidden rounded-full border border-slate-900/10 bg-white/92 p-1.5 shadow-lg shadow-slate-900/10 backdrop-blur-xl transition-all duration-300 ease-out dark:border-white/10 dark:bg-[#1b1d20]/92 dark:shadow-black/40 ${
               scrolled ? 'translate-y-1 opacity-70' : 'translate-y-0 opacity-100'
             }`}
           >
