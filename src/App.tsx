@@ -125,10 +125,11 @@ export default function App() {
           className="sticky bottom-0 z-40 px-4 lg:hidden"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
         >
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-4 bottom-full h-8 bg-gradient-to-b from-transparent to-slate-50 dark:to-[#17181b]"
-          />
+          {/* No gradient scrim above the pill — it assumed whatever scrolled
+              behind it was flat page background, but cards (a different,
+              lighter color) are often what's actually there, which showed up
+              as a visible seam. The pill's own backdrop-blur already handles
+              legibility once content is actually behind it. */}
           <nav className="relative mx-auto flex max-w-md items-center gap-1.5 overflow-hidden rounded-full border border-slate-900/10 p-1.5 shadow-lg shadow-slate-900/10 dark:border-white/10 dark:shadow-black/40">
             {/* Same static glass pill as Settings' internal tab bar — no
                 scroll-based recede. That fade used a transform (translate-y) at
