@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import logo from './assets/logo.png'
 import Home from './pages/Home'
@@ -56,38 +55,6 @@ function headerTitle(pathname: string) {
   return HEADER_TITLES.find((h) => h.test(pathname))?.title ?? 'Pecunia'
 }
 
-// Instagram-style nav bar: shrinks while scrolling down, restores as soon as
-// scrolling reverses upward (not only once back at the very top).
-function useNavShrink(threshold = 16, directionDeadZone = 4) {
-  const [shrunk, setShrunk] = useState(false)
-
-  useEffect(() => {
-    let lastY = window.scrollY
-    let ticking = false
-    function onScroll() {
-      if (ticking) return
-      ticking = true
-      requestAnimationFrame(() => {
-        const y = window.scrollY
-        const delta = y - lastY
-        if (y <= threshold) {
-          setShrunk(false)
-        } else if (delta > directionDeadZone) {
-          setShrunk(true)
-        } else if (delta < -directionDeadZone) {
-          setShrunk(false)
-        }
-        lastY = y
-        ticking = false
-      })
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [threshold, directionDeadZone])
-
-  return shrunk
-}
-
 function SidebarItem({ item }: { item: (typeof NAV_ITEMS)[number] }) {
   return (
     <NavLink
@@ -107,7 +74,6 @@ function SidebarItem({ item }: { item: (typeof NAV_ITEMS)[number] }) {
 
 export default function App() {
   const location = useLocation()
-  const scrolled = useNavShrink()
   const { order } = useNavOrder()
 
   const orderedItems = order.map((to) => NAV_ITEMS.find((item) => item.to === to)!).filter(Boolean)
@@ -163,18 +129,15 @@ export default function App() {
             aria-hidden
             className="pointer-events-none absolute inset-x-0 bottom-full h-8 bg-gradient-to-b from-transparent to-slate-50 dark:to-[#17181b]"
           />
-          <nav
-            className={`relative mx-auto flex max-w-md items-center gap-1.5 overflow-hidden rounded-full border border-slate-900/10 p-1.5 shadow-lg shadow-slate-900/10 transition-opacity duration-300 ease-out dark:border-white/10 dark:shadow-black/40 ${
-              scrolled ? 'opacity-70' : 'opacity-100'
-            }`}
-          >
-            {/* No transform on this element or its blur child below — Safari's
-                backdrop-filter silently stops rendering (goes fully transparent,
-                not just unclipped) when it shares a compositing layer with a
-                transformed ancestor, which is why this recede effect is opacity-
-                only rather than the translate-y it used before. Blur/fill also
-                lives on its own layer, separate from the overflow-hidden element
-                that clips it to the pill shape, for the same reason. */}
+          <nav className="relative mx-auto flex max-w-md items-center gap-1.5 overflow-hidden rounded-full border border-slate-900/10 p-1.5 shadow-lg shadow-slate-900/10 dark:border-white/10 dark:shadow-black/40">
+            {/* Same static glass pill as Settings' internal tab bar — no
+                scroll-based recede. That fade used a transform (translate-y) at
+                one point, and Safari's backdrop-filter stops rendering entirely
+                under a transformed ancestor; dropping the recede behavior
+                altogether removes the risk instead of chasing it further. Blur/
+                fill lives on its own layer, separate from the overflow-hidden
+                element that clips it to the pill shape, for the same class of
+                Safari backdrop-filter bug. */}
             <div aria-hidden className="absolute inset-0 z-0 bg-white/92 backdrop-blur-xl dark:bg-[#1b1d20]/92" />
             <div ref={bottomPill.containerRef} className="relative z-10 flex flex-1 justify-around">
               <div
