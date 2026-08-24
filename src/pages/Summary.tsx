@@ -18,10 +18,10 @@ function MonthlyBudget({ income, bills, spent }: { income: number; bills: number
     return (
       <Link
         to="/budget"
-        className="flex items-center justify-between rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-400"
+        className="flex items-center justify-between rounded-3xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-400"
       >
         <span>Add bills and income to compare spending against your budget</span>
-        <span className="ml-3 shrink-0 text-accent">Set up →</span>
+        <span className="ml-3 shrink-0 text-accent-text">Set up →</span>
       </Link>
     )
   }
@@ -34,13 +34,14 @@ function MonthlyBudget({ income, bills, spent }: { income: number; bills: number
   const widthPct = grown ? Math.min(Math.max(pct * 100, spent > 0 ? 4 : 0), 100) : 0
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
+    <section className="rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
       <div className="mb-1 flex items-baseline justify-between text-sm">
         <span className="font-medium text-slate-700 dark:text-slate-300">
-          Spent {currency.format(spent)} of {currency.format(Math.max(discretionary, 0))}
+          Spent <span className="tabular-nums">{currency.format(spent)}</span> of{' '}
+          <span className="tabular-nums">{currency.format(Math.max(discretionary, 0))}</span>
         </span>
         <span
-          className={`font-semibold ${over ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}
+          className={`tabular-nums font-semibold ${over ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}
         >
           {over ? '−' : ''}
           {currency.format(Math.abs(remaining))} {over ? 'over' : 'left'}
@@ -81,40 +82,37 @@ function monthLabel(key: string) {
 // Like BarList, but a row with a configured category budget (Settings → Category
 // budgets) shows progress against its own cap instead of a bar scaled to the
 // largest category — own denominator, own over/nearing color, like MonthlyBudget.
+// The bar itself is the row's own background fill (not a separate track beneath
+// the label), so amount and proportion read in one glance.
 function CategoryBarList({ rows }: { rows: { label: string; total: number; cap?: number }[] }) {
   const max = Math.max(...rows.map((r) => r.total), 1)
   const { grown, settled } = useGrowIn(1250)
   const durationClass = settled ? 'duration-300' : 'duration-[1250ms] ease-out'
 
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className="flex flex-col">
       {rows.map((r) => {
         const hasCap = r.cap !== undefined && r.cap > 0
-        const pct = hasCap ? r.total / r.cap! : 0
+        const pct = hasCap ? r.total / r.cap! : r.total / max
         const over = hasCap && r.total > r.cap!
         const nearing = hasCap && !over && pct >= 0.85
-        const widthPct = grown
-          ? hasCap
-            ? Math.min(Math.max(pct * 100, r.total > 0 ? 4 : 0), 100)
-            : Math.max((r.total / max) * 100, 4)
-          : 0
-        const barColor = over ? 'bg-rose-500' : nearing ? 'bg-amber-500' : 'bg-accent'
+        const widthPct = grown ? Math.min(Math.max(pct * 100, r.total > 0 ? 3 : 0), 100) : 0
+        const fillClass = over ? 'bg-rose-500/15' : nearing ? 'bg-amber-500/15' : 'bg-accent/10'
 
         return (
-          <li key={r.label}>
-            <div className="mb-1 flex items-baseline justify-between text-sm">
+          <li key={r.label} className="relative overflow-hidden border-b border-slate-100 dark:border-[#1e2027]">
+            <div
+              aria-hidden
+              className={`absolute inset-y-0 left-0 ${fillClass} transition-all ${durationClass}`}
+              style={{ width: `${widthPct}%` }}
+            />
+            <div className="relative flex items-baseline justify-between gap-3 px-1 py-2.5 text-sm">
               <span className="font-medium text-slate-700 dark:text-slate-300">{r.label}</span>
               <span
-                className={`tabular-nums ${over ? 'font-semibold text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400'}`}
+                className={`tabular-nums shrink-0 ${over ? 'font-semibold text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400'}`}
               >
                 {hasCap ? `${currency.format(r.total)} of ${currency.format(r.cap!)}` : currency.format(r.total)}
               </span>
-            </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-[#2b2e33]">
-              <div
-                className={`h-full rounded-full ${barColor} transition-all ${durationClass}`}
-                style={{ width: `${widthPct}%` }}
-              />
             </div>
           </li>
         )
@@ -199,7 +197,7 @@ export default function Summary() {
 
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-6">
         <section className="lg:flex-1">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">
             By Category · This Month
           </h2>
           {byCategory.length > 0 ? (
@@ -210,7 +208,7 @@ export default function Summary() {
         </section>
 
         <section className="lg:flex-1">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">
             By Month
           </h2>
           <BarList rows={byMonth} />

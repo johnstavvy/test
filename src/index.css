@@ -4,13 +4,20 @@
 
 :root {
   --accent: #c94f24;
+  /* ~15% lower lightness than --accent, for small text on light backgrounds
+     (View all / Set up links) — the fill value is only ~4.5:1 on white, the
+     minimum for AA, so text set in it reads as borderline. Dark mode's fill
+     is already high-contrast against dark backgrounds, so text reuses it. */
+  --accent-text: #ab431f;
 }
 .dark {
   --accent: #e2734e;
+  --accent-text: #e2734e;
 }
 
 @theme {
   --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
 }
 
 html, body, #root {

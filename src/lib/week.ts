@@ -34,3 +34,14 @@ export function currentMonthKey(): string {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
+
+// "Today" / "Yesterday" / "Aug 24" — the human date formatter shared by any list
+// that groups or labels items by day.
+export function humanDayLabel(iso: string): string {
+  const today = isoDate(new Date())
+  if (iso === today) return 'Today'
+  const t = dateFromIso(today)
+  const yesterday = isoDate(new Date(t.getFullYear(), t.getMonth(), t.getDate() - 1))
+  if (iso === yesterday) return 'Yesterday'
+  return dateFromIso(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}

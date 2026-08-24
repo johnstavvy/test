@@ -4,7 +4,6 @@ import {
   addBill,
   daysUntilDue,
   deleteBill,
-  dueLabel,
   effectiveAmount,
   isBillPaidThisMonth,
   isPastDueThisMonth,
@@ -23,34 +22,35 @@ import { useToast } from '../lib/toast'
 import { addToTrash, removeFromTrash } from '../lib/trash'
 import { useGrowIn } from '../lib/useGrowIn'
 import { SegmentedControl } from '../lib/SegmentedControl'
+import { HeaderAction } from '../lib/headerAction'
 import { IconCar, IconCheck, IconHome, IconPencil, IconTv } from '../lib/icons'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
-const BILL_CATEGORY_COLORS: Record<string, string> = {
-  'Mortgage/Rent': 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
-  Electricity: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400',
-  Gas: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400',
-  Water: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
-  Internet: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-400',
-  Subscription: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400',
-  Insurance: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
-  'Car Payment': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400',
-  'Auto Insurance': 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400',
-  Fuel: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
-  Maintenance: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400',
-  Other: 'bg-slate-100 text-slate-700 dark:bg-[#2b2e33] dark:text-slate-300',
-}
-
 const VEHICLE_CATEGORIES: BillCategory[] = ['Car Payment', 'Auto Insurance', 'Fuel', 'Maintenance']
 
 const inputClass =
-  'rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100'
+  'rounded-full border border-slate-300 bg-white px-3.5 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100'
 const labelClass = 'flex flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300'
 
 // Which of the two household members an entry belongs to; missing/legacy rows default to person 1.
 function personOf(entity: { person?: 1 | 2 }): 1 | 2 {
   return entity.person === 2 ? 2 : 1
+}
+
+// One muted meta line per row, at most 3 segments: category, bank/card, due-or-paid
+// status — "Recurring" is implied for a monthly bill so it's never spelled out here.
+function billMetaSegments(bill: Bill): string[] {
+  const paid = isBillPaidThisMonth(bill)
+  const status = paid ? 'paid this month' : dueStatus(bill)
+  return [bill.category, bill.paymentSource, status].filter((s): s is string => !!s && s.trim() !== '')
+}
+
+function dueStatus(bill: Bill): string {
+  const days = daysUntilDue(bill.dueDay)
+  if (days === 0) return 'due today'
+  if (days === 1) return 'due tomorrow'
+  return `due the ${ordinal(bill.dueDay)}`
 }
 
 function FrequencyToggle({ recurring, onChange }: { recurring: boolean; onChange: (recurring: boolean) => void }) {
@@ -153,7 +153,7 @@ function BillForm({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-accent/30 bg-white p-4 shadow-sm dark:bg-[#212327]">
+    <div className="flex flex-col gap-3 rounded-3xl border border-accent/30 bg-white p-4 shadow-sm dark:bg-[#212327]">
       <label className={labelClass}>
         Name
         <input
@@ -252,7 +252,7 @@ function BillForm({
         {onDelete && (
           <button
             onClick={onDelete}
-            className="flex-1 rounded-full border border-red-300 px-4 py-3 font-medium text-red-600 transition-transform duration-150 active:scale-[0.97] active:bg-red-50 dark:border-red-800 dark:text-red-400 dark:active:bg-red-950"
+            className="flex-1 rounded-full border border-rose-300 px-4 py-3 font-medium text-rose-600 transition-transform duration-150 active:scale-[0.97] active:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:active:bg-rose-950"
           >
             Delete
           </button>
@@ -275,32 +275,14 @@ function BillForm({
   )
 }
 
-function FrequencyBadge({ recurring, compact }: { recurring: boolean; compact?: boolean }) {
-  const size = compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-xs'
-  if (recurring) {
-    return <span className={`rounded-full bg-accent/15 font-semibold text-accent ${size}`}>Recurring</span>
-  }
-  return (
-    <span className={`rounded-full bg-slate-100 font-medium text-slate-500 dark:bg-[#2b2e33] dark:text-slate-400 ${size}`}>
-      One-time
-    </span>
-  )
-}
-
-function AutoPayBadge({ compact }: { compact?: boolean }) {
-  const size = compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-xs'
-  return (
-    <span className={`rounded-full bg-sky-100 font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-400 ${size}`}>
-      Auto-pay
-    </span>
-  )
-}
-
-function TagBadge({ children, compact }: { children: string; compact?: boolean }) {
-  const size = compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-0.5 text-xs'
+function TagBadge({ children, tone = 'neutral' }: { children: string; tone?: 'neutral' | 'accent' }) {
   return (
     <span
-      className={`truncate rounded-full bg-slate-100 font-medium text-slate-500 dark:bg-[#2b2e33] dark:text-slate-400 ${size}`}
+      className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+        tone === 'accent'
+          ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400'
+          : 'bg-slate-100 text-slate-500 dark:bg-[#2b2e33] dark:text-slate-400'
+      }`}
     >
       {children}
     </span>
@@ -330,12 +312,10 @@ function PaidToggle({ paid, onToggle, compact }: { paid: boolean; onToggle: () =
 
 function BillListItem({
   bill,
-  compact,
   onClick,
   onTogglePaid,
 }: {
   bill: Bill
-  compact?: boolean
   onClick: () => void
   onTogglePaid: () => void
 }) {
@@ -344,61 +324,84 @@ function BillListItem({
   const amount = effectiveAmount(bill)
   const needsUpdate = amount === 0 && bill.amount !== 0
   const paid = isBillPaidThisMonth(bill)
-
-  if (compact) {
-    return (
-      <button
-        onClick={onClick}
-        className={`flex w-full flex-col items-start gap-1 rounded-xl border bg-white px-3 py-2 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:bg-[#212327] dark:active:bg-[#2b2e33] ${paid ? 'border-emerald-200 dark:border-emerald-800' : 'border-slate-200 dark:border-[#31343a]'}`}
-      >
-        <div className="flex w-full items-start justify-between gap-2">
-          <p className="min-w-0 truncate text-sm font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
-          <PaidToggle paid={paid} onToggle={onTogglePaid} compact />
-        </div>
-        <FrequencyBadge recurring={isRecurring(bill)} compact />
-        {bill.autoPay && <AutoPayBadge compact />}
-        {bill.paymentSource && <TagBadge compact>{bill.paymentSource}</TagBadge>}
-        <span
-          className={`truncate text-[11px] ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}
-        >
-          {paid ? 'Paid this month' : dueLabel(days, bill.dueDay)}
-        </span>
-        <span
-          className={`text-xs font-semibold ${needsUpdate ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-slate-100'}`}
-        >
-          {currency.format(amount)}
-          {needsUpdate && ' · update'}
-        </span>
-      </button>
-    )
-  }
+  const meta = billMetaSegments(bill).join(' · ')
 
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center justify-between rounded-2xl border bg-white px-4 py-3 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:bg-[#212327] dark:active:bg-[#2b2e33] lg:hover:border-accent/40 lg:hover:shadow-sm ${paid ? 'border-emerald-200 dark:border-emerald-800' : 'border-slate-200 dark:border-[#31343a]'}`}
+      className="flex w-full items-center justify-between gap-3 border-b border-slate-100 py-3 text-left transition-transform duration-150 active:scale-[0.98] dark:border-[#1e2027] lg:hover:bg-slate-50 dark:lg:hover:bg-[#16181d]"
     >
-      <div className="flex min-w-0 flex-col items-start gap-1">
-        <p className="truncate font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${BILL_CATEGORY_COLORS[bill.category] ?? BILL_CATEGORY_COLORS.Other}`}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-center gap-1.5">
+          <p className="truncate font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
+          {!isRecurring(bill) && <TagBadge>One-time</TagBadge>}
+          {bill.autoPay && <TagBadge tone="accent">Auto-pay</TagBadge>}
+        </div>
+        <p
+          className={`truncate text-xs ${
+            !paid && soon ? 'font-semibold text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'
+          }`}
         >
-          {bill.category}
-        </span>
-        <FrequencyBadge recurring={isRecurring(bill)} />
-        {bill.autoPay && <AutoPayBadge />}
-        {bill.paymentSource && <TagBadge>{bill.paymentSource}</TagBadge>}
-        <span className={`text-xs ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}>
-          {paid ? 'Paid this month' : dueLabel(days, bill.dueDay)}
-        </span>
+          {meta}
+        </p>
       </div>
-      <div className="ml-3 flex shrink-0 flex-col items-end gap-2">
-        <PaidToggle paid={paid} onToggle={onTogglePaid} />
-        <p className={`font-semibold ${needsUpdate ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-slate-100'}`}>
+      <div className="ml-2 flex shrink-0 items-center gap-3">
+        <p
+          className={`tabular-nums font-semibold ${needsUpdate ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-slate-100'}`}
+        >
           {currency.format(amount)}
           {needsUpdate && <span className="block text-right text-[11px] font-medium">update</span>}
         </p>
+        <PaidToggle paid={paid} onToggle={onTogglePaid} />
       </div>
+    </button>
+  )
+}
+
+function CompactBillListItem({
+  bill,
+  onClick,
+  onTogglePaid,
+}: {
+  bill: Bill
+  onClick: () => void
+  onTogglePaid: () => void
+}) {
+  const amount = effectiveAmount(bill)
+  const needsUpdate = amount === 0 && bill.amount !== 0
+  const paid = isBillPaidThisMonth(bill)
+  const days = daysUntilDue(bill.dueDay)
+  const soon = days <= 3
+  const meta = billMetaSegments(bill).join(' · ')
+
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full flex-col gap-1 border-b border-slate-100 py-2.5 text-left transition-transform duration-150 active:scale-[0.98] dark:border-[#1e2027] lg:hover:bg-slate-50 dark:lg:hover:bg-[#16181d]"
+    >
+      <div className="flex w-full items-start justify-between gap-2">
+        <p className="min-w-0 truncate text-sm font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
+        <PaidToggle paid={paid} onToggle={onTogglePaid} compact />
+      </div>
+      {(bill.autoPay || !isRecurring(bill)) && (
+        <div className="flex items-center gap-1">
+          {!isRecurring(bill) && <TagBadge>One-time</TagBadge>}
+          {bill.autoPay && <TagBadge tone="accent">Auto-pay</TagBadge>}
+        </div>
+      )}
+      <p
+        className={`truncate text-[11px] ${
+          !paid && soon ? 'font-semibold text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'
+        }`}
+      >
+        {meta}
+      </p>
+      <span
+        className={`tabular-nums text-xs font-semibold ${needsUpdate ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-slate-100'}`}
+      >
+        {currency.format(amount)}
+        {needsUpdate && ' · update'}
+      </span>
     </button>
   )
 }
@@ -459,9 +462,11 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <p className="text-sm text-slate-500 dark:text-slate-400">Monthly bills total</p>
-        <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+      <div className="rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">
+          Monthly bills total
+        </p>
+        <p className="tabular-nums text-[34px] font-medium leading-none tracking-[-0.03em] text-slate-900 dark:text-slate-100">
           {currency.format(totalMonthlyBills(bills))}
         </p>
       </div>
@@ -475,9 +480,9 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
 
           return (
             <div key={group.key} className="flex flex-col gap-2">
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">
                 {group.label}{' '}
-                <span className="font-normal text-slate-400 dark:text-slate-500">
+                <span className="tabular-nums font-normal normal-case tracking-normal">
                   · {currency.format(totalMonthlyBills(list))}
                 </span>
               </p>
@@ -525,7 +530,7 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
                   const visiblePersonList = personList.filter((bill) => matches(bill.name) || bill.id === editing)
 
                   return (
-                    <div key={personNum} className="flex flex-col gap-2">
+                    <div key={personNum} className="flex flex-col gap-1">
                       <div className="flex items-center justify-between gap-1">
                         <PersonHeader
                           name={names[idx]}
@@ -551,15 +556,14 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
                       </div>
 
                       {visiblePersonList.length === 0 ? (
-                        <p className="px-1 text-xs text-slate-400 dark:text-slate-500">
+                        <p className="px-1 py-2 text-xs text-slate-400 dark:text-slate-500">
                           {personList.length === 0 ? 'None yet.' : 'No matches.'}
                         </p>
                       ) : (
-                        <ul className="flex flex-col gap-2">
+                        <ul className="flex flex-col">
                           {visiblePersonList.map((bill) => (
                             <li key={bill.id}>
-                              <BillListItem
-                                compact
+                              <CompactBillListItem
                                 bill={bill}
                                 onClick={() => setEditing(bill.id)}
                                 onTogglePaid={() => handleTogglePaid(bill)}
@@ -581,9 +585,9 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
         return (
           <div key={group.key} className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">
                 {group.label}{' '}
-                <span className="font-normal text-slate-400 dark:text-slate-500">
+                <span className="tabular-nums font-normal normal-case tracking-normal">
                   · {currency.format(totalMonthlyBills(list))}
                 </span>
               </p>
@@ -620,7 +624,7 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
               <p className="px-1 py-3 text-center text-sm text-slate-400 dark:text-slate-500">No matches.</p>
             )}
 
-            <ul className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:gap-3">
+            <ul className="flex flex-col lg:grid lg:grid-cols-2 lg:gap-x-3">
               {visibleList.map((bill) => (
                 <li key={bill.id}>
                   {editing === bill.id ? (
@@ -681,7 +685,7 @@ function IncomeForm({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-accent/30 bg-white p-4 shadow-sm dark:bg-[#212327]">
+    <div className="flex flex-col gap-3 rounded-3xl border border-accent/30 bg-white p-4 shadow-sm dark:bg-[#212327]">
       <label className={labelClass}>
         Source
         <input
@@ -748,7 +752,7 @@ function IncomeForm({
         {onDelete && (
           <button
             onClick={onDelete}
-            className="flex-1 rounded-full border border-red-300 px-4 py-3 font-medium text-red-600 transition-transform duration-150 active:scale-[0.97] active:bg-red-50 dark:border-red-800 dark:text-red-400 dark:active:bg-red-950"
+            className="flex-1 rounded-full border border-rose-300 px-4 py-3 font-medium text-rose-600 transition-transform duration-150 active:scale-[0.97] active:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:active:bg-rose-950"
           >
             Delete
           </button>
@@ -778,8 +782,8 @@ function CashFlowChart({ income, outgoing }: { income: number; outgoing: number 
   const durationClass = settled ? 'duration-300' : 'duration-[1250ms] ease-out'
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
-      <p className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+    <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">
         This month
       </p>
 
@@ -809,9 +813,9 @@ function CashFlowChart({ income, outgoing }: { income: number; outgoing: number 
         </div>
       </div>
 
-      <div className="mt-1 flex items-baseline justify-between border-t border-slate-100 pt-3 dark:border-[#31343a]">
+      <div className="mt-1 flex items-baseline justify-between border-t border-slate-100 pt-3 dark:border-[#1e2027]">
         <span className="font-medium text-slate-700 dark:text-slate-300">Net</span>
-        <span className={`font-semibold ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+        <span className={`tabular-nums font-semibold ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
           {net >= 0 ? '+' : ''}
           {currency.format(net)}
         </span>
@@ -845,7 +849,7 @@ function PersonHeader({
         onChange={(e) => onNameDraftChange(e.target.value)}
         onBlur={onSaveRename}
         onKeyDown={(e) => e.key === 'Enter' && (e.currentTarget as HTMLInputElement).blur()}
-        className="rounded-lg border border-accent/40 bg-white px-2 py-1 text-base font-semibold text-slate-900 focus:outline-none dark:bg-[#212327] dark:text-slate-100"
+        className="rounded-full border border-accent/40 bg-white px-2.5 py-1 text-base font-semibold text-slate-900 focus:outline-none dark:bg-[#212327] dark:text-slate-100"
       />
     )
   }
@@ -856,7 +860,9 @@ function PersonHeader({
     >
       {name}
       <IconPencil className="h-3 w-3 text-slate-400 dark:text-slate-500" />
-      <span className="font-normal text-slate-400 dark:text-slate-500">· {currency.format(subtotal)}</span>
+      <span className="tabular-nums font-normal text-slate-400 dark:text-slate-500">
+        · {currency.format(subtotal)}
+      </span>
     </button>
   )
 }
@@ -954,7 +960,7 @@ function IncomeSection({
           const visibleList = list.filter((income) => matches(income.source) || income.id === editing)
 
           return (
-            <div key={personNum} className="flex flex-col gap-2">
+            <div key={personNum} className="flex flex-col gap-1">
               <div className="flex items-center justify-between gap-1">
                 <PersonHeader
                   name={names[idx]}
@@ -979,25 +985,24 @@ function IncomeSection({
               </div>
 
               {visibleList.length === 0 ? (
-                <p className="px-1 text-xs text-slate-400 dark:text-slate-500">
+                <p className="px-1 py-2 text-xs text-slate-400 dark:text-slate-500">
                   {list.length === 0 ? 'None yet.' : 'No matches.'}
                 </p>
               ) : (
-                <ul className="flex flex-col gap-2">
+                <ul className="flex flex-col">
                   {visibleList.map((income) => (
                     <li key={income.id}>
                       <button
                         onClick={() => setEditing(income.id)}
-                        className="flex w-full flex-col items-start gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-[#31343a] dark:bg-[#212327] dark:active:bg-[#2b2e33]"
+                        className="flex w-full flex-col items-start gap-1 border-b border-slate-100 py-2.5 text-left transition-transform duration-150 active:scale-[0.98] dark:border-[#1e2027] lg:hover:bg-slate-50 dark:lg:hover:bg-[#16181d]"
                       >
                         <p className="w-full truncate text-sm font-medium text-slate-900 dark:text-slate-100">
                           {income.source}
                         </p>
-                        <FrequencyBadge recurring={isRecurring(income)} compact />
                         <span className="truncate text-[11px] text-slate-400 dark:text-slate-500">
-                          Paid the {ordinal(income.payDay)}
+                          {isRecurring(income) ? '' : 'One-time · '}Paid the {ordinal(income.payDay)}
                         </span>
-                        <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
+                        <span className="tabular-nums text-xs font-semibold text-slate-900 dark:text-slate-100">
                           {currency.format(income.amount)}
                         </span>
                       </button>
@@ -1030,46 +1035,60 @@ export default function Budget() {
 
   useEffect(reload, [])
 
-  if (bills === null || incomes === null || expenses === null) {
-    return <p className="px-4 py-6 text-slate-500 dark:text-slate-400">Loading…</p>
-  }
-
-  const monthKey = currentMonthKey()
-  const monthExpensesTotal = expenses.filter((e) => e.date.startsWith(monthKey)).reduce((sum, e) => sum + e.total, 0)
-
   return (
     <div className="flex flex-col gap-4 px-4 py-6 lg:mx-auto lg:max-w-3xl">
-      <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Budget</h1>
-
-      <SegmentedControl
-        shape="pill"
-        value={section}
-        onChange={setSection}
-        options={[
-          { value: 'bills', label: 'Bills' },
-          { value: 'income', label: 'Income' },
-        ]}
-      />
-
-      {(section === 'bills' ? bills.length > 0 : incomes.length > 0) && (
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={section === 'bills' ? 'Search bills…' : 'Search income…'}
-          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
+      <HeaderAction>
+        <SegmentedControl
+          tone="solid"
+          value={section}
+          onChange={setSection}
+          options={[
+            { value: 'bills', label: 'Bills' },
+            { value: 'income', label: 'Income' },
+          ]}
         />
-      )}
+      </HeaderAction>
 
-      {section === 'bills' ? (
-        <BillsSection bills={bills} query={query} reload={reload} />
+      <div className="hidden lg:block">
+        <h1 className="mb-2 text-[17px] font-semibold text-slate-900 dark:text-slate-100">Budget</h1>
+        <SegmentedControl
+          tone="solid"
+          value={section}
+          onChange={setSection}
+          options={[
+            { value: 'bills', label: 'Bills' },
+            { value: 'income', label: 'Income' },
+          ]}
+        />
+      </div>
+
+      {bills === null || incomes === null || expenses === null ? (
+        <p className="text-slate-500 dark:text-slate-400">Loading…</p>
       ) : (
-        <IncomeSection
-          incomes={incomes}
-          query={query}
-          billsTotal={totalMonthlyBills(bills)}
-          monthExpensesTotal={monthExpensesTotal}
-          reload={reload}
-        />
+        <>
+          {(section === 'bills' ? bills.length > 0 : incomes.length > 0) && (
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={section === 'bills' ? 'Search bills…' : 'Search income…'}
+              className="rounded-full border border-slate-300 bg-white px-4 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
+            />
+          )}
+
+          {section === 'bills' ? (
+            <BillsSection bills={bills} query={query} reload={reload} />
+          ) : (
+            <IncomeSection
+              incomes={incomes}
+              query={query}
+              billsTotal={totalMonthlyBills(bills)}
+              monthExpensesTotal={expenses
+                .filter((e) => e.date.startsWith(currentMonthKey()))
+                .reduce((sum, e) => sum + e.total, 0)}
+              reload={reload}
+            />
+          )}
+        </>
       )}
     </div>
   )

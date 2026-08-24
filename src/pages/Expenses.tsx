@@ -1,34 +1,35 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { db, type Expense } from '../db'
 import { deleteExpense, listExpenses } from '../lib/expenses'
-import { dateFromIso, isoDate, mondayOf } from '../lib/week'
+import { dateFromIso, humanDayLabel, isoDate, mondayOf } from '../lib/week'
 import { IconChevronDown, IconReceipt, IconScan, IconSearch } from '../lib/icons'
 import { useSwipeToDelete } from '../lib/useSwipeToDelete'
 import { useToast } from '../lib/toast'
 import { useCategories } from '../lib/userCategories'
 import { addToTrash, removeFromTrash } from '../lib/trash'
 import { ExpandingSheet } from '../lib/expandingSheet'
+import { HeaderAction } from '../lib/headerAction'
 import Capture from './Capture'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Groceries: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
-  Dining: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400',
-  Transport: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
-  Shopping: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
-  Utilities: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400',
-  Health: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400',
-  Entertainment: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400',
-  Travel: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-400',
-  'Personal Care': 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-400',
-  'Home & Garden': 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-400',
-  Pets: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
-  Education: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400',
-  'Gifts & Donations': 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-400',
-  'Fees & Charges': 'bg-stone-100 text-stone-700 dark:bg-stone-800/60 dark:text-stone-400',
-  Other: 'bg-slate-100 text-slate-700 dark:bg-[#2b2e33] dark:text-slate-300',
+const CATEGORY_DOT: Record<string, string> = {
+  Groceries: 'bg-emerald-500',
+  Dining: 'bg-orange-500',
+  Transport: 'bg-blue-500',
+  Shopping: 'bg-purple-500',
+  Utilities: 'bg-yellow-500',
+  Health: 'bg-rose-500',
+  Entertainment: 'bg-pink-500',
+  Travel: 'bg-cyan-500',
+  'Personal Care': 'bg-violet-500',
+  'Home & Garden': 'bg-teal-500',
+  Pets: 'bg-amber-500',
+  Education: 'bg-indigo-500',
+  'Gifts & Donations': 'bg-fuchsia-500',
+  'Fees & Charges': 'bg-stone-500',
+  Other: 'bg-slate-400',
 }
 
 function weekRangeLabel(mondayIso: string) {
@@ -39,14 +40,14 @@ function weekRangeLabel(mondayIso: string) {
 }
 
 function ExpenseRow({ expense, onDelete }: { expense: Expense; onDelete: (e: Expense) => void }) {
-  const swipe = useSwipeToDelete(98)
+  const swipe = useSwipeToDelete(88)
 
   return (
-    <div className="relative overflow-hidden rounded-2xl">
+    <div className="relative overflow-hidden">
       <button
         onClick={() => onDelete(expense)}
         aria-label={`Delete ${expense.merchant}`}
-        className="absolute inset-y-1.5 right-1.5 flex w-20 items-center justify-center rounded-xl bg-red-500 text-sm font-semibold text-white transition-opacity active:opacity-80"
+        className="absolute inset-y-1 right-0 flex w-20 items-center justify-center rounded-full bg-rose-500 text-sm font-semibold text-white transition-opacity active:opacity-80"
       >
         Delete
       </button>
@@ -62,20 +63,18 @@ function ExpenseRow({ expense, onDelete }: { expense: Expense; onDelete: (e: Exp
           WebkitTouchCallout: 'none',
           WebkitUserSelect: 'none',
         }}
-        className="relative flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-[#31343a] dark:bg-[#212327] lg:hover:border-accent/40 lg:hover:shadow-sm"
+        className="relative flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 py-3 transition-transform duration-150 active:scale-[0.98] dark:border-[#1e2027] dark:bg-[#17181b] lg:hover:bg-slate-50 dark:lg:hover:bg-[#16181d]"
       >
         <div className="min-w-0">
           <p className="truncate font-medium text-slate-900 dark:text-slate-100">{expense.merchant}</p>
-          <div className="mt-1 flex items-center gap-2">
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${CATEGORY_COLORS[expense.category] ?? CATEGORY_COLORS.Other}`}
-            >
-              {expense.category}
-            </span>
-            <span className="text-xs text-slate-400 dark:text-slate-500">{expense.date}</span>
+          <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
+            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${CATEGORY_DOT[expense.category] ?? CATEGORY_DOT.Other}`} />
+            <span className="truncate">{expense.category}</span>
+            <span>·</span>
+            <span className="shrink-0">{humanDayLabel(expense.date)}</span>
           </div>
         </div>
-        <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
+        <p className="tabular-nums ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
           {currency.format(expense.total)}
         </p>
       </Link>
@@ -99,11 +98,11 @@ function WeekGroup({
   const total = items.reduce((sum, e) => sum + e.total, 0)
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col">
       <button
         onClick={onToggle}
         aria-expanded={isOpen}
-        className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-[#31343a] dark:bg-[#212327]"
+        className="flex items-center justify-between border-b border-slate-100 py-3 transition-transform duration-150 active:scale-[0.98] dark:border-[#1e2027] lg:hover:bg-slate-50 dark:lg:hover:bg-[#16181d]"
       >
         <div className="flex items-baseline gap-2">
           <span className="font-medium text-slate-900 dark:text-slate-100">{label}</span>
@@ -112,7 +111,7 @@ function WeekGroup({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-slate-900 dark:text-slate-100">{currency.format(total)}</span>
+          <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">{currency.format(total)}</span>
           <IconChevronDown
             className={`h-4 w-4 text-slate-400 transition-transform dark:text-slate-500 ${isOpen ? 'rotate-180' : ''}`}
           />
@@ -120,7 +119,7 @@ function WeekGroup({
       </button>
 
       {isOpen && (
-        <ul className="flex flex-col gap-2 lg:grid lg:grid-cols-2 lg:gap-3">
+        <ul className="flex flex-col lg:grid lg:grid-cols-2 lg:gap-x-3">
           {items.map((e) => (
             <li key={e.id}>
               <ExpenseRow expense={e} onDelete={onDelete} />
@@ -139,7 +138,6 @@ export default function Expenses() {
   const [categoryFilter, setCategoryFilter] = useState<string>('All')
   const [sheetOpen, setSheetOpen] = useState(false)
   const [originRect, setOriginRect] = useState<DOMRect | null>(null)
-  const pillRef = useRef<HTMLButtonElement>(null)
   const toast = useToast()
   const { categories } = useCategories()
 
@@ -147,8 +145,12 @@ export default function Expenses() {
     listExpenses().then(setExpenses)
   }, [])
 
-  function openAddExpense() {
-    setOriginRect(pillRef.current?.getBoundingClientRect() ?? null)
+  // Reads the rect from whichever trigger was actually clicked (the mobile header
+  // button and the desktop inline button are both mounted at once, CSS-hidden per
+  // breakpoint) rather than a single shared ref, so the sheet's FLIP animation
+  // always grows out of the trigger the user can actually see.
+  function openAddExpense(e: React.MouseEvent<HTMLButtonElement>) {
+    setOriginRect(e.currentTarget.getBoundingClientRect())
     setSheetOpen(true)
   }
 
@@ -207,26 +209,36 @@ export default function Expenses() {
 
   return (
     <>
+      <HeaderAction>
+        <button
+          onClick={openAddExpense}
+          aria-label="Scan receipt"
+          className="flex items-center gap-1.5 rounded-full bg-accent px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-95"
+        >
+          <IconScan className="h-4 w-4" />
+          Scan
+        </button>
+      </HeaderAction>
+
       <ExpandingSheet open={sheetOpen} originRect={originRect} onClose={() => setSheetOpen(false)} title="Add Expense">
         <Capture onSaved={handleExpenseSaved} />
       </ExpandingSheet>
 
       <div className="flex flex-col gap-4 px-4 py-6">
-        <div className="flex justify-center py-2">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{isFiltering ? 'Matching' : 'Total tracked'}</p>
+            <h1 className="tabular-nums text-[42px] font-medium leading-none tracking-[-0.03em] text-slate-900 dark:text-slate-100">
+              {currency.format(total)}
+            </h1>
+          </div>
           <button
-            ref={pillRef}
             onClick={openAddExpense}
-            aria-label="Add expense"
-            className="flex items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition-transform duration-150 active:scale-95"
+            className="hidden shrink-0 items-center gap-1.5 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-95 lg:flex"
           >
             <IconScan className="h-4 w-4" />
-            Add Expense
+            Scan receipt
           </button>
-        </div>
-
-        <div>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{isFiltering ? 'Matching' : 'Total tracked'}</p>
-          <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">{currency.format(total)}</h1>
         </div>
 
         {expenses !== null && expenses.length > 0 && (
@@ -235,12 +247,12 @@ export default function Expenses() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search merchant…"
-              className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
+              className="min-w-0 flex-1 rounded-full border border-slate-300 bg-white px-4 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
             />
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="shrink-0 rounded-xl border border-slate-300 bg-white px-2 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
+              className="shrink-0 rounded-full border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
             >
               <option value="All">All categories</option>
               {categories.map((c) => (

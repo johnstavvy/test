@@ -28,6 +28,11 @@ const SETTINGS_TABS: { key: SettingsTabKey; label: string; icon: ComponentType<{
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
+const sectionLabelClass = 'text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500'
+const cardClass = 'flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-[#31343a] dark:bg-[#212327]'
+const rowItemClass =
+  'flex items-center justify-between gap-3 rounded-none border-b border-slate-100 py-2.5 text-sm last:border-b-0 dark:border-[#1e2027]'
+
 function timeAgo(ms: number): string {
   const diff = Date.now() - ms
   const minutes = Math.floor(diff / 60_000)
@@ -60,7 +65,7 @@ function MenuOrderList({ order, setOrder }: { order: string[]; setOrder: (order:
   const orderedItems = order.map((to) => NAV_ITEMS.find((item) => item.to === to)!).filter(Boolean)
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col">
       {orderedItems.map((item) => {
         const isDragging = drag.dragState?.key === item.to
         return (
@@ -76,8 +81,8 @@ function MenuOrderList({ order, setOrder }: { order: string[]; setOrder: (order:
               transition: isDragging ? 'none' : 'transform 200ms ease-out',
               zIndex: isDragging ? 10 : undefined,
             }}
-            className={`flex select-none items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 shadow-sm dark:border-[#31343a] dark:bg-[#212327] dark:text-slate-200 ${
-              isDragging ? 'scale-105 shadow-lg' : ''
+            className={`flex select-none items-center gap-3 border-b border-slate-100 py-2.5 text-sm font-medium text-slate-700 last:border-b-0 dark:border-[#1e2027] dark:text-slate-200 ${
+              isDragging ? 'scale-105 bg-white shadow-lg dark:bg-[#212327]' : ''
             }`}
           >
             <item.icon className="h-5 w-5 shrink-0 text-slate-400 dark:text-slate-500" />
@@ -99,24 +104,24 @@ function TrashRow({
   onRestore: (entry: TrashEntry) => void
   onDeleteForever: (entry: TrashEntry) => void
 }) {
-  const swipe = useSwipeToDelete(184)
+  const swipe = useSwipeToDelete(168)
   const { title, amount } = describeTrashEntry(entry)
   const kindLabel = entry.type === 'expense' ? 'Expense' : entry.type === 'bill' ? 'Bill' : 'Income'
 
   return (
-    <div className="relative overflow-hidden rounded-2xl">
-      <div className="absolute inset-y-1.5 right-1.5 flex gap-1.5">
+    <div className="relative overflow-hidden">
+      <div className="absolute inset-y-1 right-0 flex gap-1.5">
         <button
           onClick={() => onRestore(entry)}
           aria-label={`Restore ${title}`}
-          className="flex w-20 items-center justify-center rounded-xl bg-accent text-sm font-semibold text-white transition-opacity active:opacity-80"
+          className="flex w-20 items-center justify-center rounded-full bg-accent text-sm font-semibold text-white transition-opacity active:opacity-80"
         >
           Restore
         </button>
         <button
           onClick={() => onDeleteForever(entry)}
           aria-label={`Delete ${title} forever`}
-          className="flex w-20 items-center justify-center rounded-xl bg-red-500 text-sm font-semibold text-white transition-opacity active:opacity-80"
+          className="flex w-20 items-center justify-center rounded-full bg-rose-500 text-sm font-semibold text-white transition-opacity active:opacity-80"
         >
           Delete
         </button>
@@ -128,7 +133,7 @@ function TrashRow({
           transition: swipe.isDragging ? 'none' : 'transform 200ms ease-out',
           touchAction: 'pan-y',
         }}
-        className="relative flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-[#31343a] dark:bg-[#212327]"
+        className="relative flex items-center justify-between gap-3 border-b border-slate-100 bg-white py-2.5 last:border-b-0 dark:border-[#1e2027] dark:bg-[#212327]"
       >
         <div className="min-w-0">
           <p className="truncate font-medium text-slate-900 dark:text-slate-100">{title}</p>
@@ -136,7 +141,7 @@ function TrashRow({
             {kindLabel} · Deleted {timeAgo(entry.deletedAt)}
           </p>
         </div>
-        <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">{amount}</p>
+        <p className="tabular-nums ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">{amount}</p>
       </div>
     </div>
   )
@@ -156,11 +161,11 @@ function SettingsTabBar({ tab, setTab }: { tab: SettingsTabKey; setTab: (tab: Se
     <div className="sticky z-10" style={{ top: headerHeight }}>
       <div
         ref={pill.containerRef}
-        className="relative flex justify-around rounded-full border border-white/60 bg-white/80 px-1 py-1.5 shadow-lg shadow-slate-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-[#1b1d20]/80 dark:shadow-black/40"
+        className="relative flex justify-around rounded-full border border-slate-900/10 bg-white/92 px-1 py-1.5 shadow-lg shadow-slate-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-[#1b1d20]/92 dark:shadow-black/40"
       >
         <div
           aria-hidden
-          className={`pointer-events-none absolute inset-y-1 z-0 rounded-full bg-slate-900/[0.06] backdrop-blur-sm transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] dark:bg-[#2d3036] ${
+          className={`pointer-events-none absolute inset-y-1 z-0 rounded-full bg-accent/15 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
             pill.rect ? 'opacity-100' : 'opacity-0'
           }`}
           style={pill.rect ? { left: pill.rect.start, width: pill.rect.size } : undefined}
@@ -170,7 +175,7 @@ function SettingsTabBar({ tab, setTab }: { tab: SettingsTabKey; setTab: (tab: Se
             key={t.key}
             ref={pill.registerRef(t.key)}
             onClick={() => setTab(t.key)}
-            className={`relative z-10 flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
+            className={`relative z-10 flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors ${
               tab === t.key ? 'text-accent' : 'text-slate-400 dark:text-slate-500'
             }`}
           >
@@ -298,16 +303,16 @@ export default function Settings() {
 
   return (
     <div className="flex flex-col gap-4 px-4 py-6 lg:mx-auto lg:max-w-xl">
-      <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Settings</h1>
+      <h1 className="hidden text-[17px] font-semibold text-slate-900 dark:text-slate-100 lg:block">Settings</h1>
 
       <SettingsTabBar tab={tab} setTab={setTab} />
 
       {tab === 'general' && (
         <>
-          <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
+          <div className="flex flex-col gap-2">
             <div>
-              <p className="font-medium text-slate-900 dark:text-slate-100">Appearance</p>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <p className={sectionLabelClass}>Appearance</p>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 Choose light, dark, or match your device setting.
               </p>
             </div>
@@ -322,13 +327,13 @@ export default function Settings() {
             />
           </div>
 
-          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
+          <div className="flex flex-col gap-2">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-medium text-slate-900 dark:text-slate-100">Menu order</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Press and drag a tab to reorder it.</p>
+                <p className={sectionLabelClass}>Menu order</p>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Press and drag a tab to reorder it.</p>
               </div>
-              <button onClick={resetOrder} className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400">
+              <button onClick={resetOrder} className="shrink-0 text-sm font-medium text-rose-600 dark:text-rose-400">
                 Reset
               </button>
             </div>
@@ -338,7 +343,7 @@ export default function Settings() {
       )}
 
       {tab === 'backup' && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
+        <div className={cardClass}>
           <div>
             <p className="font-medium text-slate-900 dark:text-slate-100">Backup &amp; restore</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -372,7 +377,7 @@ export default function Settings() {
 
       {tab === 'categories' && (
         <>
-          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
+          <div className={cardClass}>
             <div>
               <p className="font-medium text-slate-900 dark:text-slate-100">Custom category rules</p>
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -385,12 +390,12 @@ export default function Settings() {
                 value={ruleKeyword}
                 onChange={(e) => setRuleKeyword(e.target.value)}
                 placeholder="e.g. Joe's Diner"
-                className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
+                className="min-w-0 flex-1 rounded-full border border-slate-300 bg-white px-3.5 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
               />
               <select
                 value={ruleCategory}
                 onChange={(e) => setRuleCategory(e.target.value as Category)}
-                className="shrink-0 rounded-xl border border-slate-300 bg-white px-2 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
+                className="shrink-0 rounded-full border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
               >
                 {categories.map((c) => (
                   <option key={c} value={c}>
@@ -409,18 +414,15 @@ export default function Settings() {
             {rules.length === 0 ? (
               <p className="text-sm text-slate-400 dark:text-slate-500">No custom rules yet.</p>
             ) : (
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col">
                 {rules.map((r) => (
-                  <li
-                    key={r.keyword}
-                    className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-[#2b2e33]"
-                  >
+                  <li key={r.keyword} className={rowItemClass}>
                     <span className="min-w-0 truncate text-slate-700 dark:text-slate-200">
                       <span className="font-medium">{r.keyword}</span> → {r.category}
                     </span>
                     <button
                       onClick={() => remove(r.keyword)}
-                      className="shrink-0 pl-3 text-red-600 dark:text-red-400"
+                      className="shrink-0 pl-3 text-rose-600 dark:text-rose-400"
                       aria-label={`Remove rule for ${r.keyword}`}
                     >
                       <IconClose className="h-3.5 w-3.5" />
@@ -431,7 +433,7 @@ export default function Settings() {
             )}
           </div>
 
-          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
+          <div className={cardClass}>
             <div>
               <p className="font-medium text-slate-900 dark:text-slate-100">Categories</p>
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -445,7 +447,7 @@ export default function Settings() {
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
                 placeholder="e.g. Childcare"
-                className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
+                className="min-w-0 flex-1 rounded-full border border-slate-300 bg-white px-3.5 py-2 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
               />
               <button
                 onClick={() => {
@@ -460,18 +462,15 @@ export default function Settings() {
             </div>
 
             {userCategories.length > 0 && (
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col">
                 {[...userCategories]
                   .sort((a, b) => a.localeCompare(b))
                   .map((c) => (
-                    <li
-                      key={c}
-                      className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-[#2b2e33]"
-                    >
+                    <li key={c} className={rowItemClass}>
                       <span className="min-w-0 truncate font-medium text-slate-700 dark:text-slate-200">{c}</span>
                       <button
                         onClick={() => removeCategory(c)}
-                        className="shrink-0 pl-3 text-red-600 dark:text-red-400"
+                        className="shrink-0 pl-3 text-rose-600 dark:text-rose-400"
                         aria-label={`Remove category ${c}`}
                       >
                         <IconClose className="h-3.5 w-3.5" />
@@ -482,7 +481,7 @@ export default function Settings() {
             )}
           </div>
 
-          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
+          <div className={cardClass}>
             <div>
               <p className="font-medium text-slate-900 dark:text-slate-100">Category budgets</p>
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -490,9 +489,9 @@ export default function Settings() {
               </p>
             </div>
 
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col">
               {categories.map((category) => (
-                <li key={category} className="flex items-center justify-between gap-3">
+                <li key={category} className={rowItemClass}>
                   <span className="text-sm text-slate-700 dark:text-slate-200">{category}</span>
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm text-slate-400 dark:text-slate-500">$</span>
@@ -513,7 +512,7 @@ export default function Settings() {
                           return next
                         })
                       }}
-                      className="w-24 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-right text-sm text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
+                      className="w-24 rounded-full border border-slate-300 bg-white px-3 py-1.5 text-right text-sm text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
                     />
                   </div>
                 </li>
@@ -524,7 +523,7 @@ export default function Settings() {
       )}
 
       {tab === 'trash' && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
+        <div className={cardClass}>
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="font-medium text-slate-900 dark:text-slate-100">Deleted items</p>
@@ -535,7 +534,7 @@ export default function Settings() {
             {trash.length > 0 && (
               <button
                 onClick={handleClearTrash}
-                className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400"
+                className="shrink-0 text-sm font-medium text-rose-600 dark:text-rose-400"
               >
                 Delete all
               </button>
@@ -545,7 +544,7 @@ export default function Settings() {
           {trash.length === 0 ? (
             <p className="text-sm text-slate-400 dark:text-slate-500">Nothing deleted recently.</p>
           ) : (
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col">
               {trash.map((entry) => (
                 <li key={entry.id}>
                   <TrashRow entry={entry} onRestore={handleRestore} onDeleteForever={handleDeleteForever} />

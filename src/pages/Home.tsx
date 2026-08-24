@@ -1,86 +1,61 @@
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Bill, Expense, Income } from '../db'
 import { listExpenses } from '../lib/expenses'
 import { daysUntilDue, dueLabel, effectiveAmount, isBillPaidThisMonth, listBills, totalMonthlyBills } from '../lib/bills'
 import { listIncomes, totalMonthlyIncome } from '../lib/income'
-import { currentMonthKey, currentWeekDays, dateFromIso, isoDate } from '../lib/week'
+import { currentMonthKey, currentWeekDays, dateFromIso, humanDayLabel } from '../lib/week'
 import { useGrowIn } from '../lib/useGrowIn'
-import { IconAlertTriangle, IconChevronDown, IconWallet } from '../lib/icons'
+import { IconChevronDown, IconWallet } from '../lib/icons'
+import { HeaderAction } from '../lib/headerAction'
+import { ExpandingSheet } from '../lib/expandingSheet'
+import Capture from './Capture'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
-function SpendingTrend({
+const rowClass =
+  'flex items-center justify-between gap-3 border-b border-slate-100 py-3 transition-transform duration-150 active:scale-[0.98] dark:border-[#1e2027] lg:hover:bg-slate-50 dark:lg:hover:bg-[#16181d]'
+
+function HomeHero({
   income,
   outgoing,
   discretionary,
-  cumulativeSpend,
-  cumulativeIncome,
+  spent,
   daysInMonth,
   todayDayOfMonth,
 }: {
   income: number
   outgoing: number
   discretionary: number
-  cumulativeSpend: number[]
-  cumulativeIncome: number[]
+  spent: number
   daysInMonth: number
   todayDayOfMonth: number
 }) {
-  const gradientId = useId()
   const { grown, settled } = useGrowIn(1250)
 
   if (income === 0 && outgoing === 0) {
     return (
       <Link
         to="/budget"
-        className="flex items-center justify-between rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-400"
+        className="flex items-center justify-between rounded-3xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-400"
       >
         <span>Add bills and income to see your monthly budget overview</span>
-        <span className="ml-3 shrink-0 text-accent">Set up →</span>
+        <span className="ml-3 shrink-0 text-accent-text">Set up →</span>
       </Link>
     )
   }
 
-  const net = income - outgoing
   const durationClass = settled ? 'duration-300' : 'duration-[1250ms] ease-out'
-  const areaGradientId = `${gradientId}-area`
-  const lineGradientId = `${gradientId}-line`
-  const incomeGradientId = `${gradientId}-income`
-  const revealClipId = `${gradientId}-reveal`
-
-  const width = 280
-  const height = 84
-  const spentSoFar = cumulativeSpend[todayDayOfMonth - 1] ?? 0
-  const incomeSoFar = cumulativeIncome[cumulativeIncome.length - 1] ?? 0
-  const maxY = Math.max(discretionary, spentSoFar, incomeSoFar, 1) * 1.15
-  const budgetPct = discretionary > 0 ? spentSoFar / discretionary : 0
-  const overBudget = discretionary > 0 && spentSoFar > discretionary
-  const nearingBudget = discretionary > 0 && !overBudget && budgetPct >= 0.85
-  const xAt = (day: number) => (daysInMonth > 1 ? ((day - 1) / (daysInMonth - 1)) * width : 0)
-  const yAt = (value: number) => height - (value / maxY) * height
-
-  const points = cumulativeSpend.slice(0, todayDayOfMonth).map((value, i) => [xAt(i + 1), yAt(value)])
-  const hasLine = points.length >= 2
-  const linePath = hasLine ? points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]},${p[1]}`).join(' ') : ''
-  const areaPath = hasLine
-    ? `M${points[0][0]},${height} ${points.map((p) => `L${p[0]},${p[1]}`).join(' ')} L${points[points.length - 1][0]},${height} Z`
-    : ''
-  const budgetY = yAt(discretionary)
-  const lastPoint = points[points.length - 1]
-
-  // Income is a known, scheduled amount (paid on specific days-of-month), not a running
-  // actual like spending — so its line covers the whole month, not just "so far".
-  const incomePoints = cumulativeIncome.map((value, i) => [xAt(i + 1), yAt(value)])
-  const hasIncomeLine = incomePoints.length >= 2
-  const incomeLinePath = hasIncomeLine
-    ? incomePoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0]},${p[1]}`).join(' ')
-    : ''
+  const remaining = discretionary - spent
+  const over = discretionary > 0 && spent > discretionary
+  const nearingLimit = !over && discretionary > 0 && spent / discretionary >= 0.85
+  const pct = discretionary > 0 ? spent / discretionary : spent > 0 ? 1 : 0
+  const widthPct = grown ? Math.min(Math.max(pct * 100, spent > 0 ? 4 : 0), 100) : 0
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
+    <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-[#31343a] dark:bg-[#212327]">
       <div className="flex items-baseline justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">
           Spending this month
         </p>
         <p className="text-xs text-slate-400 dark:text-slate-500">
@@ -88,102 +63,37 @@ function SpendingTrend({
         </p>
       </div>
 
-      <div className="relative h-20 w-full">
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-20 w-full" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id={areaGradientId} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#f43f5e" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id={lineGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#fb7185" />
-            <stop offset="100%" stopColor="#e11d48" />
-          </linearGradient>
-          <linearGradient id={incomeGradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#34d399" />
-            <stop offset="100%" stopColor="#059669" />
-          </linearGradient>
-          <clipPath id={revealClipId}>
-            <rect
-              x="0"
-              y="0"
-              height={height}
-              width={grown ? width : 0}
-              className={`transition-all ${durationClass}`}
-            />
-          </clipPath>
-        </defs>
-
-        {discretionary > 0 && discretionary <= maxY && (
-          <line
-            x1="0"
-            y1={budgetY}
-            x2={width}
-            y2={budgetY}
-            stroke="currentColor"
-            strokeWidth="1"
-            strokeDasharray="4 4"
-            className="text-slate-300 dark:text-slate-600"
-          />
-        )}
-
-        <g clipPath={`url(#${revealClipId})`}>
-          {hasLine && <path d={areaPath} fill={`url(#${areaGradientId})`} />}
-          {hasIncomeLine && (
-            <path
-              d={incomeLinePath}
-              fill="none"
-              stroke={`url(#${incomeGradientId})`}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeOpacity="0.85"
-              strokeDasharray="5 4"
-            />
-          )}
-          {hasLine && (
-            <path d={linePath} fill="none" stroke={`url(#${lineGradientId})`} strokeWidth="2.5" strokeLinecap="round" />
-          )}
-        </g>
-      </svg>
-      {lastPoint && (
+      <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-[#2b2e33]">
         <div
-          className={`absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#e11d48] shadow-sm transition-opacity dark:border-[#212327] ${durationClass} ${
-            grown ? 'opacity-100' : 'opacity-0'
+          className={`h-full rounded-full transition-all ${durationClass} ${
+            over ? 'bg-rose-500' : nearingLimit ? 'bg-amber-500' : 'bg-accent'
           }`}
-          style={{ left: `${(lastPoint[0] / width) * 100}%`, top: `${(lastPoint[1] / height) * 100}%` }}
+          style={{ width: `${widthPct}%` }}
         />
-      )}
       </div>
 
-      <div className="flex items-center justify-between text-sm">
-        <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" />
-          Income <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">{currency.format(income)}</span>
-        </span>
-        <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-          <span className="h-2 w-2 rounded-full bg-rose-500" />
-          Outgoing <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">{currency.format(outgoing)}</span>
-        </span>
-      </div>
-      <div className="flex items-center justify-between border-t border-slate-100 pt-1.5 text-sm dark:border-[#31343a]">
-        <span className="text-slate-600 dark:text-slate-300">Net</span>
+      <p className="text-sm text-slate-600 dark:text-slate-300">
+        <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">{currency.format(spent)}</span>{' '}
+        of <span className="tabular-nums">{currency.format(Math.max(discretionary, 0))}</span> discretionary ·{' '}
         <span
-          className={`font-semibold ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}
+          className={`tabular-nums font-medium ${over ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-500'}`}
         >
-          {net >= 0 ? '+' : ''}
-          {currency.format(net)}
+          {over ? `${currency.format(Math.abs(remaining))} over` : `${currency.format(remaining)} left`}
+        </span>
+      </p>
+
+      <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-sm dark:border-[#1e2027]">
+        <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          Income{' '}
+          <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">{currency.format(income)}</span>
+        </span>
+        <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+          <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+          Outgoing{' '}
+          <span className="tabular-nums font-medium text-slate-900 dark:text-slate-100">{currency.format(outgoing)}</span>
         </span>
       </div>
-      {(overBudget || nearingBudget) && (
-        <p
-          className={`flex items-center gap-1.5 border-t border-slate-100 pt-1.5 text-xs font-medium dark:border-[#31343a] ${overBudget ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}`}
-        >
-          <IconAlertTriangle className="h-3.5 w-3.5 shrink-0" />
-          {overBudget
-            ? "You've spent past this month's discretionary budget."
-            : `You've used ${Math.round(budgetPct * 100)}% of this month's discretionary budget.`}
-        </p>
-      )}
     </div>
   )
 }
@@ -207,29 +117,32 @@ function UpcomingBills({ bills }: { bills: Bill[] }) {
   return (
     <Link
       to="/budget"
-      className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-[#31343a] dark:bg-[#212327]"
+      className="flex flex-col gap-1 rounded-3xl px-1 py-1 transition-transform duration-150 active:scale-[0.98] lg:hover:bg-slate-50 dark:lg:hover:bg-[#16181d]"
     >
-      <div className="flex items-center justify-between">
-        <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+      <div className="flex items-center justify-between px-3 pt-2">
+        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">
           <IconWallet className="h-3.5 w-3.5" />
           Upcoming Bills
         </p>
-        <span className="text-xs text-accent">View all →</span>
+        <span className="text-xs text-accent-text">View all →</span>
       </div>
-      <div className="flex flex-col divide-y divide-slate-100 dark:divide-[#2b2e33]">
-        {upcoming.map(({ bill, days }) => {
+      <div className="flex flex-col px-3">
+        {upcoming.map(({ bill, days }, i) => {
           const soon = days <= 3
           return (
-            <div key={bill.id} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
+            <div
+              key={bill.id}
+              className={`flex items-center justify-between gap-3 py-2 ${i < upcoming.length - 1 ? 'border-b border-slate-100 dark:border-[#1e2027]' : ''}`}
+            >
               <div className="flex min-w-0 flex-col">
                 <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{bill.name}</p>
                 <span
-                  className={`text-xs ${soon ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'}`}
+                  className={`text-xs ${soon ? 'font-semibold text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'}`}
                 >
                   {dueLabel(days, bill.dueDay)}
                 </span>
               </div>
-              <p className="shrink-0 font-semibold text-slate-900 dark:text-slate-100">
+              <p className="tabular-nums shrink-0 font-semibold text-slate-900 dark:text-slate-100">
                 {currency.format(effectiveAmount(bill))}
               </p>
             </div>
@@ -248,12 +161,6 @@ function longLabel(iso: string) {
   return dateFromIso(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-function dayLabel(iso: string, todayIso: string, yesterdayIso: string) {
-  if (iso === todayIso) return 'Today'
-  if (iso === yesterdayIso) return 'Yesterday'
-  return dateFromIso(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
 export default function Home() {
   const [expenses, setExpenses] = useState<Expense[] | null>(null)
   const [bills, setBills] = useState<Bill[] | null>(null)
@@ -261,13 +168,31 @@ export default function Home() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [recentOpen, setRecentOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [originRect, setOriginRect] = useState<DOMRect | null>(null)
   const barGrow = useGrowIn(1250)
 
-  useEffect(() => {
+  function reload() {
     listExpenses().then(setExpenses)
     listBills().then(setBills)
     listIncomes().then(setIncomes)
-  }, [])
+  }
+
+  useEffect(reload, [])
+
+  // Reads the rect from whichever trigger was actually clicked (the mobile header
+  // button and the desktop inline button are both mounted at once, CSS-hidden per
+  // breakpoint) rather than a single shared ref, so the sheet's FLIP animation
+  // always grows out of the trigger the user can actually see.
+  function openAddExpense(e: React.MouseEvent<HTMLButtonElement>) {
+    setOriginRect(e.currentTarget.getBoundingClientRect())
+    setSheetOpen(true)
+  }
+
+  function handleExpenseSaved() {
+    reload()
+    setSheetOpen(false)
+  }
 
   const days = useMemo(currentWeekDays, [])
 
@@ -286,38 +211,6 @@ export default function Home() {
     return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
   }, [])
   const todayDayOfMonth = useMemo(() => new Date().getDate(), [])
-
-  const cumulativeSpend = useMemo(() => {
-    const monthKey = currentMonthKey()
-    const byDay = Array(daysInMonth + 1).fill(0)
-    for (const e of expenses ?? []) {
-      if (!e.date.startsWith(monthKey)) continue
-      const day = Number(e.date.slice(8, 10))
-      if (day >= 1 && day <= daysInMonth) byDay[day] += e.total
-    }
-    const cumulative: number[] = []
-    let running = 0
-    for (let d = 1; d <= daysInMonth; d++) {
-      running += byDay[d]
-      cumulative.push(running)
-    }
-    return cumulative
-  }, [expenses, daysInMonth])
-
-  const cumulativeIncome = useMemo(() => {
-    const byDay = Array(daysInMonth + 1).fill(0)
-    for (const inc of incomes ?? []) {
-      const day = Math.min(inc.payDay, daysInMonth)
-      byDay[day] += inc.amount
-    }
-    const cumulative: number[] = []
-    let running = 0
-    for (let d = 1; d <= daysInMonth; d++) {
-      running += byDay[d]
-      cumulative.push(running)
-    }
-    return cumulative
-  }, [incomes, daysInMonth])
 
   const dailyTotals = useMemo(() => {
     const totals: Record<string, number> = {}
@@ -341,12 +234,6 @@ export default function Home() {
     return [...map.entries()]
   }, [recent])
 
-  const todayIso = useMemo(() => isoDate(new Date()), [])
-  const yesterdayIso = useMemo(() => {
-    const t = dateFromIso(todayIso)
-    return isoDate(new Date(t.getFullYear(), t.getMonth(), t.getDate() - 1))
-  }, [todayIso])
-
   const q = query.trim().toLowerCase()
   const isSearching = q !== ''
 
@@ -366,13 +253,35 @@ export default function Home() {
 
   return (
     <div className="flex flex-col lg:gap-6 lg:px-4 lg:pt-6">
+      <HeaderAction>
+        <button
+          onClick={openAddExpense}
+          className="rounded-full bg-accent px-3.5 py-1.5 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-95"
+        >
+          Add
+        </button>
+      </HeaderAction>
+
+      <ExpandingSheet open={sheetOpen} originRect={originRect} onClose={() => setSheetOpen(false)} title="Add Expense">
+        <Capture onSaved={handleExpenseSaved} />
+      </ExpandingSheet>
+
+      <div className="hidden items-center justify-between lg:flex">
+        <h1 className="text-[17px] font-semibold text-slate-900 dark:text-slate-100">Home</h1>
+        <button
+          onClick={openAddExpense}
+          className="rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white shadow-sm transition-transform duration-150 active:scale-95"
+        >
+          Add
+        </button>
+      </div>
+
       <div className="flex flex-col gap-3 px-4 pt-4 lg:px-0 lg:pt-0">
-        <SpendingTrend
+        <HomeHero
           income={monthlyIncomeTotal}
           outgoing={monthlyOutgoingTotal}
           discretionary={discretionary}
-          cumulativeSpend={cumulativeSpend}
-          cumulativeIncome={cumulativeIncome}
+          spent={monthExpensesTotal}
           daysInMonth={daysInMonth}
           todayDayOfMonth={todayDayOfMonth}
         />
@@ -384,31 +293,27 @@ export default function Home() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search merchant…"
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
+            className="rounded-full border border-slate-300 bg-white px-4 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
           />
         )}
       </div>
 
       {isSearching ? (
-        <div className="flex flex-col gap-2 px-4 pb-6 lg:px-0">
+        <div className="flex flex-col px-4 pb-6 lg:px-0">
           {searchResults.length === 0 && (
             <p className="px-1 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
               No expenses match "{query.trim()}".
             </p>
           )}
           {searchGroups.map(([date, items]) => (
-            <div key={date} className="flex flex-col gap-2">
-              <p className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                {dayLabel(date, todayIso, yesterdayIso)}
+            <div key={date} className="flex flex-col">
+              <p className="px-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">
+                {humanDayLabel(date)}
               </p>
               {items.map((e) => (
-                <Link
-                  key={e.id}
-                  to={`/expense/${e.id}`}
-                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-[#31343a] dark:bg-[#212327] dark:active:bg-[#2b2e33] lg:hover:border-accent/40 lg:hover:shadow-md"
-                >
+                <Link key={e.id} to={`/expense/${e.id}`} className={rowClass}>
                   <p className="truncate font-medium text-slate-900 dark:text-slate-100">{e.merchant}</p>
-                  <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
+                  <p className="tabular-nums ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
                     {currency.format(e.total)}
                   </p>
                 </Link>
@@ -423,35 +328,40 @@ export default function Home() {
       >
         <div>
           <p className="text-sm text-slate-500 dark:text-slate-400">This week</p>
-          <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">{currency.format(weekTotal)}</h1>
+          <h1 className="tabular-nums text-[42px] font-medium leading-none tracking-[-0.03em] text-slate-900 dark:text-slate-100">
+            {currency.format(weekTotal)}
+          </h1>
         </div>
 
-        <p className="h-4 text-sm font-medium text-accent">
+        <p className="h-4 text-sm font-medium text-accent-text">
           {selectedDay && `${longLabel(selectedDay)} · ${currency.format(dailyTotals[selectedDay])}`}
         </p>
 
         <div className="flex flex-1 items-end justify-between gap-2 border-b border-slate-200 pb-0 dark:border-[#31343a]">
           {days.map((iso) => {
             const value = dailyTotals[iso]
-            const heightPct = barGrow.grown ? Math.max((value / maxValue) * 100, value > 0 ? 8 : 3) : 0
+            const heightPct = barGrow.grown ? (value > 0 ? Math.max((value / maxValue) * 100, 4) : 0) : 0
             const isSelected = selectedDay === iso
+            const isZero = value === 0
             return (
               <button
                 key={iso}
                 onClick={() => setSelectedDay((prev) => (prev === iso ? null : iso))}
                 aria-label={`${longLabel(iso)}: ${currency.format(value)}`}
-                className="flex h-24 flex-1 flex-col items-center justify-end gap-1.5 lg:h-40"
+                className="flex flex-1 flex-col items-center gap-1.5"
               >
-                <div
-                  className={`w-full max-w-[24px] rounded-t bg-accent transition-all lg:max-w-[32px] ${
-                    barGrow.settled ? 'duration-200' : 'duration-[1250ms] ease-out'
-                  } ${
-                    isSelected
-                      ? 'ring-2 ring-accent ring-offset-2 ring-offset-slate-50 dark:ring-offset-[#17181b]'
-                      : ''
-                  }`}
-                  style={{ height: `${heightPct}%` }}
-                />
+                <div className="flex h-16 w-full items-end justify-center lg:h-32">
+                  <div
+                    className={`min-h-1.5 w-full max-w-[24px] rounded-t-lg rounded-b-[4px] transition-all lg:max-w-[32px] ${
+                      isZero ? 'bg-slate-200 dark:bg-[#2a2d34]' : 'bg-accent'
+                    } ${barGrow.settled ? 'duration-200' : 'duration-[1250ms] ease-out'} ${
+                      isSelected
+                        ? 'ring-2 ring-accent ring-offset-2 ring-offset-slate-50 dark:ring-offset-[#17181b]'
+                        : ''
+                    }`}
+                    style={{ height: `${heightPct}%` }}
+                  />
+                </div>
                 <span
                   className={`text-xs transition-colors ${
                     isSelected ? 'font-semibold text-accent' : 'text-slate-400 dark:text-slate-500'
@@ -465,11 +375,11 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-2 px-4 pb-6 lg:w-96 lg:shrink-0 lg:px-0 lg:pb-0">
+      <section className="flex flex-col px-4 pb-6 lg:w-96 lg:shrink-0 lg:px-0 lg:pb-0">
         <button
           onClick={() => setRecentOpen((open) => !open)}
           aria-expanded={recentOpen}
-          className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] dark:border-[#31343a] dark:bg-[#212327]"
+          className="flex items-center justify-between border-b border-slate-100 py-3 transition-transform duration-150 active:scale-[0.98] dark:border-[#1e2027] lg:hover:bg-slate-50 dark:lg:hover:bg-[#16181d]"
         >
           <span className="font-medium text-slate-900 dark:text-slate-100">Recent Expenses</span>
           <IconChevronDown
@@ -478,7 +388,7 @@ export default function Home() {
         </button>
 
         {recentOpen && (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col">
             {expenses === null && <p className="px-1 py-4 text-sm text-slate-500 dark:text-slate-400">Loading…</p>}
 
             {expenses !== null && recent.length === 0 && (
@@ -488,18 +398,14 @@ export default function Home() {
             )}
 
             {recentGroups.map(([date, items]) => (
-              <div key={date} className="flex flex-col gap-2">
-                <p className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                  {dayLabel(date, todayIso, yesterdayIso)}
+              <div key={date} className="flex flex-col">
+                <p className="px-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">
+                  {humanDayLabel(date)}
                 </p>
                 {items.map((e) => (
-                  <Link
-                    key={e.id}
-                    to={`/expense/${e.id}`}
-                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-transform duration-150 active:scale-[0.98] active:bg-slate-50 dark:border-[#31343a] dark:bg-[#212327] dark:active:bg-[#2b2e33] lg:hover:border-accent/40 lg:hover:shadow-md"
-                  >
+                  <Link key={e.id} to={`/expense/${e.id}`} className={rowClass}>
                     <p className="truncate font-medium text-slate-900 dark:text-slate-100">{e.merchant}</p>
-                    <p className="ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
+                    <p className="tabular-nums ml-3 shrink-0 font-semibold text-slate-900 dark:text-slate-100">
                       {currency.format(e.total)}
                     </p>
                   </Link>
@@ -508,7 +414,7 @@ export default function Home() {
             ))}
 
             {expenses !== null && expenses.length > recent.length && (
-              <Link to="/expenses" className="py-2 text-center text-sm font-medium text-accent">
+              <Link to="/expenses" className="py-3 text-center text-sm font-medium text-accent-text">
                 View all expenses
               </Link>
             )}

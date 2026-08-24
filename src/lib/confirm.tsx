@@ -54,7 +54,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               <button
                 onClick={() => settle(true)}
                 className={`flex-1 rounded-full px-4 py-3 font-semibold text-white shadow-sm transition-transform duration-150 active:scale-[0.97] ${
-                  state.destructive ? 'bg-red-600 active:opacity-90' : 'bg-accent active:opacity-90'
+                  state.destructive ? 'bg-rose-600 active:opacity-90' : 'bg-accent active:opacity-90'
                 }`}
               >
                 {state.confirmLabel ?? 'Confirm'}

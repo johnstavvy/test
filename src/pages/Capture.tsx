@@ -238,7 +238,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
           </p>
         </div>
         {error && (
-          <p className="rounded-2xl bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+          <p className="rounded-3xl bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
             {error}
           </p>
         )}
@@ -328,7 +328,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 px-6 py-24 text-center">
         {imageDataUrl && (
-          <img src={imageDataUrl} alt="Receipt preview" className="h-40 w-auto rounded-2xl shadow" />
+          <img src={imageDataUrl} alt="Receipt preview" className="h-40 w-auto rounded-3xl shadow" />
         )}
         <p className="font-medium text-slate-700 dark:text-slate-300">Reading receipt… {progress}%</p>
         <div className="h-2 w-full max-w-xs overflow-hidden rounded-full bg-slate-200 dark:bg-[#2b2e33]">
@@ -343,14 +343,14 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
 
   return (
     <div className="flex flex-col gap-4 px-4 py-6 lg:mx-auto lg:max-w-xl">
-      <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+      <h1 className="text-[17px] font-semibold text-slate-900 dark:text-slate-100">
         {imageDataUrl ? 'Review expense' : 'New expense'}
       </h1>
       {error && (
-        <p className="rounded-2xl bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">{error}</p>
+        <p className="rounded-3xl bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">{error}</p>
       )}
       {imageDataUrl && (
-        <img src={imageDataUrl} alt="Receipt" className="max-h-56 w-full rounded-2xl object-contain shadow" />
+        <img src={imageDataUrl} alt="Receipt" className="max-h-56 w-full rounded-3xl object-contain shadow" />
       )}
 
       <label className="flex flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
@@ -362,7 +362,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
             setMerchant(value)
             if (!imageDataUrl && !categoryTouched) setCategory(guessCategory(value))
           }}
-          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
+          className="rounded-full border border-slate-300 bg-white px-3.5 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
         />
       </label>
 
@@ -373,7 +373,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
+            className="rounded-full border border-slate-300 bg-white px-3.5 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
           />
         </label>
         <label className="flex flex-1 flex-col gap-1 text-sm font-medium text-slate-600 dark:text-slate-300">
@@ -384,7 +384,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
             step="0.01"
             value={total}
             onChange={(e) => setTotal(e.target.value)}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
+            className="rounded-full border border-slate-300 bg-white px-3.5 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
           />
         </label>
       </div>
@@ -397,7 +397,7 @@ export default function Capture({ onSaved }: { onSaved?: () => void } = {}) {
             setCategory(e.target.value as Category)
             setCategoryTouched(true)
           }}
-          className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
+          className="rounded-full border border-slate-300 bg-white px-3.5 py-2.5 text-base text-slate-900 transition-shadow focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 dark:border-[#3a3e45] dark:bg-[#212327] dark:text-slate-100"
         >
           {categories.map((c) => (
             <option key={c} value={c}>

@@ -19,7 +19,10 @@ export function useActivePill(activeKey: string, deps: unknown[]) {
   useLayoutEffect(() => {
     function update() {
       const el = itemRefs.current.get(activeKey)
-      if (!el) return
+      if (!el) {
+        setRect(null)
+        return
+      }
       // offsetLeft/offsetWidth are layout-space (transform/scale-invariant), unlike
       // getBoundingClientRect() — needed because the nav container animates a CSS
       // `scale` on scroll, and this pill's own position is set as an inline style on
