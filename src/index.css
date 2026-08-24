@@ -24,6 +24,16 @@ html, body, #root {
   height: 100%;
 }
 
+/* Suppresses iOS's elastic rubber-band bounce on the document scroll — needed
+   on both html and body, not just body, for WebKit to actually stop the
+   top-level page from overshooting past its content on a fast flick-scroll.
+   Without it, the sticky bottom nav visibly lifts away from the screen edge
+   during the bounce (most noticeable in standalone/home-screen PWA mode,
+   which has no browser chrome to otherwise absorb the gesture). */
+html {
+  overscroll-behavior-y: none;
+}
+
 body {
   margin: 0;
   -webkit-tap-highlight-color: transparent;
