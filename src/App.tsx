@@ -116,14 +116,17 @@ export default function App() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-slate-50 dark:bg-[#17181b] lg:mx-0 lg:max-w-none lg:flex-row">
-      <aside className="hidden lg:sticky lg:top-4 lg:m-4 lg:flex lg:h-[calc(100vh-2rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-1 lg:overflow-hidden lg:rounded-3xl lg:border lg:border-white/60 lg:bg-white/70 lg:p-4 lg:shadow-lg lg:shadow-slate-900/10 lg:backdrop-blur-xl dark:lg:border-white/10 dark:lg:bg-[#1b1d20]/70 dark:lg:shadow-black/40">
-        <div className="flex items-center gap-2 px-3 pb-4 pt-1">
+      <aside className="relative hidden lg:sticky lg:top-4 lg:m-4 lg:flex lg:h-[calc(100vh-2rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-1 lg:overflow-hidden lg:rounded-3xl lg:border lg:border-white/60 lg:p-4 lg:shadow-lg lg:shadow-slate-900/10 dark:lg:border-white/10 dark:lg:shadow-black/40">
+        <div aria-hidden className="absolute inset-0 z-0 bg-white/70 backdrop-blur-xl dark:bg-[#1b1d20]/70" />
+        <div className="relative z-10 flex items-center gap-2 px-3 pb-4 pt-1">
           <img src={logo} alt="" className="h-7 w-7 rounded-lg" />
           <span className="font-semibold text-slate-900 dark:text-slate-100">Pecunia</span>
         </div>
-        {orderedItems.map((item) => (
-          <SidebarItem key={item.to} item={item} />
-        ))}
+        <div className="relative z-10 flex flex-col gap-1">
+          {orderedItems.map((item) => (
+            <SidebarItem key={item.to} item={item} />
+          ))}
+        </div>
       </aside>
 
       <div className="flex min-h-screen flex-1 flex-col lg:min-h-0">
@@ -161,11 +164,15 @@ export default function App() {
             className="pointer-events-none absolute inset-x-0 bottom-full h-8 bg-gradient-to-b from-transparent to-slate-50 dark:to-[#17181b]"
           />
           <nav
-            className={`relative mx-auto flex max-w-md items-center gap-1.5 overflow-hidden rounded-full border border-slate-900/10 bg-white/92 p-1.5 shadow-lg shadow-slate-900/10 backdrop-blur-xl transition-all duration-300 ease-out dark:border-white/10 dark:bg-[#1b1d20]/92 dark:shadow-black/40 ${
+            className={`relative mx-auto flex max-w-md items-center gap-1.5 overflow-hidden rounded-full border border-slate-900/10 p-1.5 shadow-lg shadow-slate-900/10 transition-all duration-300 ease-out dark:border-white/10 dark:shadow-black/40 ${
               scrolled ? 'translate-y-1 opacity-70' : 'translate-y-0 opacity-100'
             }`}
           >
-            <div ref={bottomPill.containerRef} className="relative flex flex-1 justify-around">
+            {/* Blur/fill lives on its own layer, separate from the overflow-hidden
+                element that clips it to the pill shape — Safari's backdrop-filter
+                stops rendering when it shares an element with overflow-hidden. */}
+            <div aria-hidden className="absolute inset-0 z-0 bg-white/92 backdrop-blur-xl dark:bg-[#1b1d20]/92" />
+            <div ref={bottomPill.containerRef} className="relative z-10 flex flex-1 justify-around">
               <div
                 aria-hidden
                 className={`pointer-events-none absolute inset-y-0 z-0 rounded-full bg-accent/15 transition-all ease-[cubic-bezier(0.34,1.56,0.64,1)] ${

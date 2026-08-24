@@ -161,8 +161,12 @@ function SettingsTabBar({ tab, setTab }: { tab: SettingsTabKey; setTab: (tab: Se
     <div className="sticky z-10" style={{ top: headerHeight }}>
       <div
         ref={pill.containerRef}
-        className="relative flex justify-around overflow-hidden rounded-full border border-slate-900/10 bg-white/92 px-1 py-1.5 shadow-lg shadow-slate-900/10 backdrop-blur-xl dark:border-white/10 dark:bg-[#1b1d20]/92 dark:shadow-black/40"
+        className="relative flex justify-around overflow-hidden rounded-full border border-slate-900/10 px-1 py-1.5 shadow-lg shadow-slate-900/10 dark:border-white/10 dark:shadow-black/40"
       >
+        {/* Blur/fill lives on its own layer, separate from the overflow-hidden
+            element that clips it to the pill shape — Safari's backdrop-filter
+            stops rendering when it shares an element with overflow-hidden. */}
+        <div aria-hidden className="absolute inset-0 z-0 bg-white/92 backdrop-blur-xl dark:bg-[#1b1d20]/92" />
         <div
           aria-hidden
           className={`pointer-events-none absolute inset-y-1 z-0 rounded-full bg-accent/15 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${

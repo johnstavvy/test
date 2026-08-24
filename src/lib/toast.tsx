@@ -39,16 +39,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         <div
           key={toast.id}
           role="status"
-          className="fixed inset-x-4 z-50 mx-auto flex max-w-sm animate-toast-in items-center justify-between gap-3 overflow-hidden rounded-3xl border border-white/10 bg-slate-900/95 px-4 py-3 text-sm text-white shadow-lg shadow-black/30 backdrop-blur-xl bottom-[calc(env(safe-area-inset-bottom)+6rem)] lg:bottom-8 dark:border-white/10 dark:bg-[#212327]/95"
+          className="fixed inset-x-4 z-50 mx-auto flex max-w-sm animate-toast-in items-center justify-between gap-3 overflow-hidden rounded-3xl border border-white/10 px-4 py-3 text-sm text-white shadow-lg shadow-black/30 bottom-[calc(env(safe-area-inset-bottom)+6rem)] lg:bottom-8 dark:border-white/10"
         >
-          <span className="min-w-0 flex-1">{toast.message}</span>
+          {/* Blur/fill lives on its own layer, separate from the overflow-hidden
+              element that clips it to the rounded shape — Safari's backdrop-filter
+              stops rendering when it shares an element with overflow-hidden. */}
+          <div aria-hidden className="absolute inset-0 z-0 bg-slate-900/95 backdrop-blur-xl dark:bg-[#212327]/95" />
+          <span className="relative z-10 min-w-0 flex-1">{toast.message}</span>
           {toast.actionLabel && (
             <button
               onClick={() => {
                 toast.onAction?.()
                 dismiss()
               }}
-              className="shrink-0 font-semibold text-accent"
+              className="relative z-10 shrink-0 font-semibold text-accent"
             >
               {toast.actionLabel}
             </button>
