@@ -127,7 +127,7 @@ export default function App() {
         >
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-full h-8 bg-gradient-to-b from-transparent to-slate-50 dark:to-[#17181b]"
+            className="pointer-events-none absolute inset-x-4 bottom-full h-8 bg-gradient-to-b from-transparent to-slate-50 dark:to-[#17181b]"
           />
           <nav className="relative mx-auto flex max-w-md items-center gap-1.5 overflow-hidden rounded-full border border-slate-900/10 p-1.5 shadow-lg shadow-slate-900/10 dark:border-white/10 dark:shadow-black/40">
             {/* Same static glass pill as Settings' internal tab bar — no
