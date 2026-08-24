@@ -164,13 +164,17 @@ export default function App() {
             className="pointer-events-none absolute inset-x-0 bottom-full h-8 bg-gradient-to-b from-transparent to-slate-50 dark:to-[#17181b]"
           />
           <nav
-            className={`relative mx-auto flex max-w-md items-center gap-1.5 overflow-hidden rounded-full border border-slate-900/10 p-1.5 shadow-lg shadow-slate-900/10 transition-all duration-300 ease-out dark:border-white/10 dark:shadow-black/40 ${
-              scrolled ? 'translate-y-1 opacity-70' : 'translate-y-0 opacity-100'
+            className={`relative mx-auto flex max-w-md items-center gap-1.5 overflow-hidden rounded-full border border-slate-900/10 p-1.5 shadow-lg shadow-slate-900/10 transition-opacity duration-300 ease-out dark:border-white/10 dark:shadow-black/40 ${
+              scrolled ? 'opacity-70' : 'opacity-100'
             }`}
           >
-            {/* Blur/fill lives on its own layer, separate from the overflow-hidden
-                element that clips it to the pill shape — Safari's backdrop-filter
-                stops rendering when it shares an element with overflow-hidden. */}
+            {/* No transform on this element or its blur child below — Safari's
+                backdrop-filter silently stops rendering (goes fully transparent,
+                not just unclipped) when it shares a compositing layer with a
+                transformed ancestor, which is why this recede effect is opacity-
+                only rather than the translate-y it used before. Blur/fill also
+                lives on its own layer, separate from the overflow-hidden element
+                that clips it to the pill shape, for the same reason. */}
             <div aria-hidden className="absolute inset-0 z-0 bg-white/92 backdrop-blur-xl dark:bg-[#1b1d20]/92" />
             <div ref={bottomPill.containerRef} className="relative z-10 flex flex-1 justify-around">
               <div
