@@ -6,7 +6,6 @@ import {
   deleteBill,
   effectiveAmount,
   isBillPaidThisMonth,
-  isPastDueThisMonth,
   listBills,
   ordinal,
   setBillPaidThisMonth,
@@ -423,9 +422,9 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
     }
     for (const key of Object.keys(groups) as BillGroupKey[]) {
       groups[key].sort((a, b) => {
-        const aSettled = a.autoPay && isPastDueThisMonth(a) ? 1 : 0
-        const bSettled = b.autoPay && isPastDueThisMonth(b) ? 1 : 0
-        if (aSettled !== bSettled) return aSettled - bSettled
+        const aPaid = isBillPaidThisMonth(a) ? 1 : 0
+        const bPaid = isBillPaidThisMonth(b) ? 1 : 0
+        if (aPaid !== bPaid) return aPaid - bPaid
         return daysUntilDue(a.dueDay) - daysUntilDue(b.dueDay)
       })
     }
