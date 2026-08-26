@@ -97,13 +97,22 @@ function CategoryBarList({ rows }: { rows: { label: string; total: number; cap?:
         const over = hasCap && r.total > r.cap!
         const nearing = hasCap && !over && pct >= 0.85
         const widthPct = grown ? Math.min(Math.max(pct * 100, r.total > 0 ? 3 : 0), 100) : 0
-        const fillClass = over ? 'bg-rose-500/15' : nearing ? 'bg-amber-500/15' : 'bg-accent/10'
+        const fillClass = over
+          ? 'bg-rose-500/15 dark:bg-rose-500/25'
+          : nearing
+            ? 'bg-amber-500/15 dark:bg-amber-500/25'
+            : 'bg-accent/10 dark:bg-accent/20'
+        const edgeClass = over
+          ? 'border-rose-500/40 dark:border-rose-400/60'
+          : nearing
+            ? 'border-amber-500/40 dark:border-amber-400/60'
+            : 'border-accent/30 dark:border-accent/50'
 
         return (
           <li key={r.label} className="relative overflow-hidden border-b border-slate-100 dark:border-[#1e2027]">
             <div
               aria-hidden
-              className={`absolute inset-y-0 left-0 ${fillClass} transition-all ${durationClass}`}
+              className={`absolute inset-y-0 left-0 border-r ${fillClass} ${edgeClass} transition-all ${durationClass}`}
               style={{ width: `${widthPct}%` }}
             />
             <div className="relative flex items-baseline justify-between gap-3 px-1 py-2.5 text-sm">
