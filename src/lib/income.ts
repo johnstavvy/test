@@ -4,9 +4,13 @@ import { dayDateThisMonth, isPastDayThisMonth, monthKeyOf } from './week'
 
 export type NewIncome = Omit<Income, 'id' | 'createdAt'>
 
-export function addIncome(income: NewIncome) {
+// `receivedAt` backdates a one-time entry to the month it actually belongs to (e.g. a
+// paycheck logged late) — createdAt is what archiveStaleOneTimeIncome() below keys off,
+// so a backdated entry is swept straight into incomeHistory on the very next listIncomes()
+// call instead of inflating the current month's live total.
+export function addIncome(income: NewIncome, receivedAt?: Date) {
   const now = Date.now()
-  return db.incomes.add({ ...income, createdAt: now, updatedAt: now } as Income)
+  return db.incomes.add({ ...income, createdAt: receivedAt?.getTime() ?? now, updatedAt: now } as Income)
 }
 
 // Recurring income auto-zeros the day after its pay day passes each month — a cue to type
@@ -22,7 +26,7 @@ export function effectiveIncomeAmount(income: Income, today = new Date()): numbe
   return lastTouched < dayDateThisMonth(income.payDay, today).getTime() ? 0 : income.amount
 }
 
-export async function updateIncome(id: number, changes: Partial<NewIncome>) {
+export async function updateIncome(id: number, changes: Partial<NewIncome>, receivedAt?: Date) {
   if (changes.amount !== undefined) {
     // Read-check-write on incomeHistory, so this has to run inside one transaction — two
     // overlapping calls (e.g. React StrictMode's double-invoked effects) would otherwise both
@@ -34,7 +38,11 @@ export async function updateIncome(id: number, changes: Partial<NewIncome>) {
       }
     })
   }
-  return db.incomes.update(id, { ...changes, updatedAt: Date.now() })
+  return db.incomes.update(id, {
+    ...changes,
+    updatedAt: Date.now(),
+    ...(receivedAt ? { createdAt: receivedAt.getTime() } : {}),
+  })
 }
 
 // Upserts (not just adds) per incomeId+month so correcting a typo mid-month never creates

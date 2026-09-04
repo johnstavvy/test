@@ -22,7 +22,7 @@ import {
   updateIncome,
 } from '../lib/income'
 import { listExpenses } from '../lib/expenses'
-import { currentMonthKey, monthLabel } from '../lib/week'
+import { currentMonthKey, dateFromIso, isoDate, monthLabel } from '../lib/week'
 import { usePeopleNames } from '../lib/people'
 import { isRecurring } from '../lib/recurring'
 import { useToast } from '../lib/toast'
@@ -666,10 +666,13 @@ function BillsSection({ bills, query, reload }: { bills: Bill[]; query: string; 
 
 // ---------- Income ----------
 
-type IncomeDraft = Omit<Income, 'id' | 'createdAt'> & { person: 1 | 2 }
+// `date` is UI-only — for a one-time entry it's the day the money actually came in (lets a
+// missed/late entry be backdated to the month it belongs to); recurring entries ignore it
+// and use `payDay` as an ongoing monthly cycle instead. See handleSave() in IncomeSection.
+type IncomeDraft = Omit<Income, 'id' | 'createdAt'> & { person: 1 | 2; date: string }
 
 function emptyIncomeDraft(person: 1 | 2): IncomeDraft {
-  return { source: '', amount: 0, payDay: 1, person, recurring: true, notes: '' }
+  return { source: '', amount: 0, payDay: 1, person, recurring: true, notes: '', date: isoDate(new Date()) }
 }
 
 function IncomeForm({
@@ -733,21 +736,34 @@ function IncomeForm({
             className={inputClass}
           />
         </label>
-        <label className={`flex-1 ${labelClass}`}>
-          Pay day
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={31}
-            value={Number.isNaN(draft.payDay) ? '' : draft.payDay}
-            onChange={(e) =>
-              set('payDay', e.target.value === '' ? NaN : Math.min(31, Math.max(1, parseInt(e.target.value) || 1)))
-            }
-            onBlur={() => Number.isNaN(draft.payDay) && set('payDay', 1)}
-            className={inputClass}
-          />
-        </label>
+        {isRecurring(draft) ? (
+          <label className={`flex-1 ${labelClass}`}>
+            Pay day
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={31}
+              value={Number.isNaN(draft.payDay) ? '' : draft.payDay}
+              onChange={(e) =>
+                set('payDay', e.target.value === '' ? NaN : Math.min(31, Math.max(1, parseInt(e.target.value) || 1)))
+              }
+              onBlur={() => Number.isNaN(draft.payDay) && set('payDay', 1)}
+              className={inputClass}
+            />
+          </label>
+        ) : (
+          <label className={`flex-1 ${labelClass}`}>
+            Date received
+            <input
+              type="date"
+              value={draft.date}
+              max={isoDate(new Date())}
+              onChange={(e) => set('date', e.target.value)}
+              className={inputClass}
+            />
+          </label>
+        )}
       </div>
 
       <label className={labelClass}>
@@ -905,8 +921,12 @@ function IncomeSection({
   }, [incomes])
 
   async function handleSave(draft: IncomeDraft) {
-    if (editing === 'new') await addIncome(draft)
-    else if (typeof editing === 'number') await updateIncome(editing, draft)
+    const { date, ...rest } = draft
+    const oneTime = !isRecurring(draft)
+    const receivedAt = oneTime ? dateFromIso(date) : undefined
+    const payload = oneTime ? { ...rest, payDay: receivedAt!.getDate() } : rest
+    if (editing === 'new') await addIncome(payload, receivedAt)
+    else if (typeof editing === 'number') await updateIncome(editing, payload, receivedAt)
     setEditing(null)
     reload()
   }
@@ -952,6 +972,7 @@ function IncomeSection({
             person: personOf(editingIncome),
             recurring: isRecurring(editingIncome),
             notes: editingIncome.notes,
+            date: isoDate(new Date(editingIncome.createdAt)),
           }}
           names={names}
           onSave={handleSave}
