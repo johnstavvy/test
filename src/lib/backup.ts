@@ -1,4 +1,4 @@
-import { db, type Bill, type Expense, type Income } from '../db'
+import { db, type Bill, type Expense, type Income, type IncomeHistoryEntry } from '../db'
 import { getPeopleNames, setPersonName } from './people'
 import { getCustomRules, setCustomRules, type CategoryRule } from './customCategories'
 import { getStoredNavOrder, setStoredNavOrder } from './navOrder'
@@ -7,7 +7,7 @@ import { getCategoryBudgets, setCategoryBudgets, type CategoryBudgets } from './
 import { getUserCategories, setUserCategories } from './userCategories'
 import type { Category } from '../db'
 
-const BACKUP_VERSION = 4
+const BACKUP_VERSION = 5
 
 export interface BackupData {
   version: number
@@ -25,13 +25,16 @@ export interface BackupData {
   categoryBudgets?: CategoryBudgets
   // Added in v4.
   userCategories?: Category[]
+  // Added in v5.
+  incomeHistory?: IncomeHistoryEntry[]
 }
 
 export async function exportData(): Promise<BackupData> {
-  const [expenses, bills, incomes] = await Promise.all([
+  const [expenses, bills, incomes, incomeHistory] = await Promise.all([
     db.expenses.toArray(),
     db.bills.toArray(),
     db.incomes.toArray(),
+    db.incomeHistory.toArray(),
   ])
   return {
     version: BACKUP_VERSION,
@@ -39,6 +42,7 @@ export async function exportData(): Promise<BackupData> {
     expenses,
     bills,
     incomes,
+    incomeHistory,
     people: getPeopleNames(),
     customCategoryRules: getCustomRules(),
     navOrder: getStoredNavOrder(),
@@ -86,13 +90,15 @@ function stripId<T extends { id: number }>(row: T): Omit<T, 'id'> {
 // design (this is a "restore" flow, not a merge) — the caller is responsible
 // for confirming with the user before calling this.
 export async function restoreBackup(data: BackupData) {
-  await db.transaction('rw', db.expenses, db.bills, db.incomes, async () => {
+  await db.transaction('rw', db.expenses, db.bills, db.incomes, db.incomeHistory, async () => {
     await db.expenses.clear()
     await db.bills.clear()
     await db.incomes.clear()
+    await db.incomeHistory.clear()
     if (data.expenses.length) await db.expenses.bulkAdd(data.expenses.map(stripId) as Expense[])
     if (data.bills.length) await db.bills.bulkAdd(data.bills.map(stripId) as Bill[])
     if (data.incomes.length) await db.incomes.bulkAdd(data.incomes.map(stripId) as Income[])
+    if (data.incomeHistory?.length) await db.incomeHistory.bulkAdd(data.incomeHistory.map(stripId) as IncomeHistoryEntry[])
   })
   if (data.people) {
     setPersonName(0, data.people[0])

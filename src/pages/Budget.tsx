@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ComponentType } from 'react'
-import { BILL_CATEGORIES, db, type Bill, type BillCategory, type Expense, type Income } from '../db'
+import { BILL_CATEGORIES, db, type Bill, type BillCategory, type Expense, type Income, type IncomeHistoryEntry } from '../db'
 import {
   addBill,
   daysUntilDue,
@@ -12,9 +12,17 @@ import {
   totalMonthlyBills,
   updateBill,
 } from '../lib/bills'
-import { addIncome, deleteIncome, listIncomes, totalMonthlyIncome, updateIncome } from '../lib/income'
+import {
+  addIncome,
+  deleteIncome,
+  effectiveIncomeAmount,
+  listIncomeHistory,
+  listIncomes,
+  totalMonthlyIncome,
+  updateIncome,
+} from '../lib/income'
 import { listExpenses } from '../lib/expenses'
-import { currentMonthKey } from '../lib/week'
+import { currentMonthKey, monthLabel } from '../lib/week'
 import { usePeopleNames } from '../lib/people'
 import { isRecurring } from '../lib/recurring'
 import { useToast } from '../lib/toast'
@@ -22,7 +30,7 @@ import { addToTrash, removeFromTrash } from '../lib/trash'
 import { useGrowIn } from '../lib/useGrowIn'
 import { SegmentedControl } from '../lib/SegmentedControl'
 import { HeaderAction } from '../lib/headerAction'
-import { IconCar, IconCheck, IconHome, IconPencil, IconTv } from '../lib/icons'
+import { IconCar, IconCheck, IconChevronDown, IconHome, IconPencil, IconTv } from '../lib/icons'
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
@@ -939,7 +947,7 @@ function IncomeSection({
         <IncomeForm
           initial={{
             source: editingIncome.source,
-            amount: editingIncome.amount,
+            amount: effectiveIncomeAmount(editingIncome),
             payDay: editingIncome.payDay,
             person: personOf(editingIncome),
             recurring: isRecurring(editingIncome),
@@ -989,22 +997,104 @@ function IncomeSection({
                 </p>
               ) : (
                 <ul className="flex flex-col">
-                  {visibleList.map((income) => (
-                    <li key={income.id}>
-                      <button
-                        onClick={() => setEditing(income.id)}
-                        className="flex w-full flex-col items-start gap-1 border-b border-slate-100 py-2.5 text-left transition-transform duration-150 active:scale-[0.98] dark:border-[#1e2027] lg:hover:bg-slate-50 dark:lg:hover:bg-[#16181d]"
-                      >
-                        <p className="w-full truncate text-sm font-medium text-slate-900 dark:text-slate-100">
-                          {income.source}
-                        </p>
-                        <span className="truncate text-[11px] text-slate-400 dark:text-slate-500">
-                          {isRecurring(income) ? '' : 'One-time · '}Paid the {ordinal(income.payDay)}
-                        </span>
-                        <span className="tabular-nums text-xs font-semibold text-slate-900 dark:text-slate-100">
-                          {currency.format(income.amount)}
-                        </span>
-                      </button>
+                  {visibleList.map((income) => {
+                    const amount = effectiveIncomeAmount(income)
+                    const needsUpdate = amount === 0 && income.amount !== 0
+                    return (
+                      <li key={income.id}>
+                        <button
+                          onClick={() => setEditing(income.id)}
+                          className="flex w-full flex-col items-start gap-1 border-b border-slate-100 py-2.5 text-left transition-transform duration-150 active:scale-[0.98] dark:border-[#1e2027] lg:hover:bg-slate-50 dark:lg:hover:bg-[#16181d]"
+                        >
+                          <p className="w-full truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+                            {income.source}
+                          </p>
+                          <span className="truncate text-[11px] text-slate-400 dark:text-slate-500">
+                            {isRecurring(income) ? '' : 'One-time · '}Paid the {ordinal(income.payDay)}
+                          </span>
+                          <span
+                            className={`tabular-nums text-xs font-semibold ${needsUpdate ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-slate-100'}`}
+                          >
+                            {currency.format(amount)}
+                            {needsUpdate && ' · update'}
+                          </span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <IncomeHistorySection incomes={incomes} names={names} />
+    </div>
+  )
+}
+
+function IncomeHistorySection({ incomes, names }: { incomes: Income[]; names: [string, string] }) {
+  const [history, setHistory] = useState<IncomeHistoryEntry[]>([])
+  const [openMonth, setOpenMonth] = useState<string | null>(null)
+
+  useEffect(() => {
+    listIncomeHistory().then((entries) => {
+      setHistory(entries)
+      setOpenMonth((prev) => prev ?? entries[0]?.month ?? null)
+    })
+    // Re-fetch whenever incomes reload (a save can write a new history snapshot).
+  }, [incomes])
+
+  const byMonth = useMemo(() => {
+    const groups: [string, IncomeHistoryEntry[]][] = []
+    for (const entry of history) {
+      const last = groups[groups.length - 1]
+      if (last && last[0] === entry.month) last[1].push(entry)
+      else groups.push([entry.month, [entry]])
+    }
+    return groups
+  }, [history])
+
+  if (byMonth.length === 0) return null
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">
+        History
+      </p>
+      <div className="flex flex-col rounded-3xl border border-slate-200 bg-white px-4 dark:border-[#31343a] dark:bg-[#212327]">
+        {byMonth.map(([month, entries]) => {
+          const total = entries.reduce((sum, e) => sum + e.amount, 0)
+          const isOpen = openMonth === month
+          return (
+            <div key={month} className="flex flex-col">
+              <button
+                onClick={() => setOpenMonth(isOpen ? null : month)}
+                aria-expanded={isOpen}
+                className="flex items-center justify-between border-b border-slate-100 py-3 text-left transition-transform duration-150 active:scale-[0.98] dark:border-[#1e2027] last:border-b-0"
+              >
+                <span className="font-medium text-slate-900 dark:text-slate-100">{monthLabel(month)}</span>
+                <div className="flex items-center gap-2">
+                  <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
+                    {currency.format(total)}
+                  </span>
+                  <IconChevronDown
+                    className={`h-4 w-4 text-slate-400 transition-transform dark:text-slate-500 ${isOpen ? 'rotate-180' : ''}`}
+                  />
+                </div>
+              </button>
+              {isOpen && (
+                <ul className="flex flex-col gap-1.5 pb-3">
+                  {entries.map((entry) => (
+                    <li
+                      key={entry.id}
+                      className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400"
+                    >
+                      <span className="truncate">
+                        {entry.source} · {names[entry.person - 1]}
+                      </span>
+                      <span className="tabular-nums">{currency.format(entry.amount)}</span>
                     </li>
                   ))}
                 </ul>

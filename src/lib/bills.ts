@@ -1,5 +1,6 @@
 import { db, type Bill } from '../db'
 import { isRecurring } from './recurring'
+import { dayDateThisMonth, isPastDayThisMonth, monthKeyOf } from './week'
 
 export type NewBill = Omit<Bill, 'id' | 'createdAt'>
 
@@ -38,17 +39,12 @@ export async function listBills() {
 
 // Midnight of this bill's due day in the current month, clamped to the month's length.
 export function dueDateThisMonth(dueDay: number, today = new Date()) {
-  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
-  const due = new Date(today.getFullYear(), today.getMonth(), Math.min(dueDay, daysInMonth))
-  due.setHours(0, 0, 0, 0)
-  return due
+  return dayDateThisMonth(dueDay, today)
 }
 
 // True starting the day after this bill's due date this month.
 export function isPastDueThisMonth(bill: Bill, today = new Date()) {
-  const due = dueDateThisMonth(bill.dueDay, today)
-  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-  return start > due
+  return isPastDayThisMonth(bill.dueDay, today)
 }
 
 // Non-recurring bills (e.g. a variable electric/gas/water bill) auto-zero the day after their
@@ -66,7 +62,7 @@ export function totalMonthlyBills(bills: Bill[]) {
 }
 
 function monthKey(today = new Date()) {
-  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+  return monthKeyOf(today)
 }
 
 export function isBillPaidThisMonth(bill: Bill, today = new Date()) {

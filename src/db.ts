@@ -83,6 +83,20 @@ export interface Income {
   recurring?: boolean // repeats every month; missing/legacy rows default to true (one-time income is the exception)
   notes: string
   createdAt: number
+  updatedAt?: number // last time the amount was edited; used to auto-zero recurring income the day after payDay passes, and to know which month a value belonged to for incomeHistory
+}
+
+// A snapshot of what a recurring income row's amount actually was for one past calendar
+// month, written just before that row auto-zeros and gets overwritten with the new month's
+// figure — see updateIncome()/effectiveIncomeAmount() in lib/income.ts.
+export interface IncomeHistoryEntry {
+  id: number
+  incomeId: number
+  source: string
+  person: 1 | 2
+  month: string // "yyyy-mm"
+  amount: number
+  recordedAt: number
 }
 
 export type TrashType = 'expense' | 'bill' | 'income'
@@ -99,6 +113,7 @@ export const db = new Dexie('expense-tracker') as Dexie & {
   bills: EntityTable<Bill, 'id'>
   incomes: EntityTable<Income, 'id'>
   trash: EntityTable<TrashEntry, 'id'>
+  incomeHistory: EntityTable<IncomeHistoryEntry, 'id'>
 }
 
 db.version(1).stores({
@@ -116,4 +131,12 @@ db.version(3).stores({
   bills: '++id, dueDay, category, name, createdAt',
   incomes: '++id, payDay, source, createdAt',
   trash: '++id, type, deletedAt',
+})
+
+db.version(4).stores({
+  expenses: '++id, date, category, merchant, createdAt',
+  bills: '++id, dueDay, category, name, createdAt',
+  incomes: '++id, payDay, source, createdAt',
+  trash: '++id, type, deletedAt',
+  incomeHistory: '++id, incomeId, month',
 })

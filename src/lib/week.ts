@@ -29,10 +29,35 @@ export function currentWeekDays(): string[] {
   )
 }
 
-// "yyyy-mm" key for the calendar month a date falls in (matches Expense.date's yyyy-mm-dd prefix).
+// "yyyy-mm" key for the calendar month a date falls in.
+export function monthKeyOf(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+// "yyyy-mm" key for the current calendar month (matches Expense.date's yyyy-mm-dd prefix).
 export function currentMonthKey(): string {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  return monthKeyOf(new Date())
+}
+
+// "August 2026" from a "yyyy-mm" key.
+export function monthLabel(key: string): string {
+  const [y, m] = key.split('-').map(Number)
+  return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+}
+
+// Midnight of the given day-of-month in today's calendar month, clamped to the month's
+// length (e.g. day 31 in April -> Apr 30). Shared by any monthly-recurring due/pay-day math.
+export function dayDateThisMonth(day: number, today = new Date()): Date {
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
+  const d = new Date(today.getFullYear(), today.getMonth(), Math.min(day, daysInMonth))
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+// True starting the day after the given day-of-month has passed in the current calendar month.
+export function isPastDayThisMonth(day: number, today = new Date()): boolean {
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  return start > dayDateThisMonth(day, today)
 }
 
 // "Today" / "Yesterday" / "Aug 24" — the human date formatter shared by any list
