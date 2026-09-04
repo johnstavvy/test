@@ -45,12 +45,12 @@ function personOf(entity: { person?: 1 | 2 }): 1 | 2 {
   return entity.person === 2 ? 2 : 1
 }
 
-// One muted meta line per row, at most 3 segments: category, bank/card, due-or-paid
-// status — "Recurring" is implied for a monthly bill so it's never spelled out here.
+// One muted meta line per row, at most 3 segments: due-or-paid status, bank/card, category
+// — "Recurring" is implied for a monthly bill so it's never spelled out here.
 function billMetaSegments(bill: Bill): string[] {
   const paid = isBillPaidThisMonth(bill)
   const status = paid ? 'paid this month' : dueStatus(bill)
-  return [bill.category, bill.paymentSource, status].filter((s): s is string => !!s && s.trim() !== '')
+  return [status, bill.paymentSource, bill.category].filter((s): s is string => !!s && s.trim() !== '')
 }
 
 function dueStatus(bill: Bill): string {
